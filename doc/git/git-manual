@@ -1,0 +1,13 @@
+git config --global user.name "Moredespicablethananyoneelse"
+git config --global user.emal "donotblieveit@outlook.com"
+git clone  https://github.com/Moredespicablethananyoneelse/zjrbackends.git
+ 
+可能会遇到的问题
+
+Question:
+	unable to connect to git server via http: HTTP/2 stream 0 was not closed cleanly: PROTOCOL_ERROR (err 1)
+Anwser: 
+	https://stackoverflow.com/questions/70700776/unable-to-connect-to-git-server-via-http-http-2-stream-0-was-not-closed-cleanly
+
+
+
