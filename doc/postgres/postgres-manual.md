@@ -151,3 +151,55 @@ postgres=#
 postgres=# \conninfo
 You are connected to database "postgres" as user "postgres" via socket in "/var/run/postgresql" at port "5432".
 postgres=#
+
+
+
+创建用户zjr 密码123456 ，赋予zjr 权限createrole 和createdb
+postgres=# create user zjr with password '123456' createrole createdb;
+CREATE ROLE
+postgres=#
+现在zjr这个用户可以执行日常的数据库管理工作，比如创建数据库和管理用户索引
+
+
+退出数据库交互终端
+postgres=# \q
+[postgres@VM-24-5-centos ~]$
+
+
+
+退出当前操作系统用户postgres
+[postgres@VM-24-5-centos ~]$ logout
+[zjr@VM-24-5-centos ~]$
+
+使用zjr这个数据库用户登录postgresql终端，指定hostname，链接默认的数据库postgres(部署时默认创建的）
+[zjr@VM-24-5-centos zjrbackends]$ psql -U zjr -h 127.0.0.1 -d postgres
+Password for user zjr:
+psql (16.4)
+Type "help" for help.
+
+postgres=>
+
+
+创建数据库zjr20241017
+postgres=> create database zjr20241017
+postgres-> ;
+CREATE DATABASE
+postgres=>
+
+
+
+退出当前postgres的终端
+postgres=> \q
+
+使用数据库用户zjr登录数据库
+[zjr@VM-24-5-centos zjrbackends]$ psql -U zjr -h 127.0.0.1 -d zjr20241017
+Password for user zjr:
+psql (16.4)
+Type "help" for help.
+
+zjr20241017=>
+
+显示链接信息
+zjr20241017=> \conninfo
+You are connected to database "zjr20241017" as user "zjr" on host "127.0.0.1" at port "5432".
+zjr20241017=>
