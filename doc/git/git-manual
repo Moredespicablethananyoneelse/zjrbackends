@@ -1,13 +1,90 @@
-git config --global user.name "Moredespicablethananyoneelse"
-git config --global user.emal "donotblieveit@outlook.com"
-git clone  https://github.com/Moredespicablethananyoneelse/zjrbackends.git
- 
-可能会遇到的问题
+0：首先在github网站的Moredespicablethananyoneelse账户下创建repository  zjrbackends仓库
 
-Question:
+1：在本地机器上配置git的相关配置参数
+   git config --global user.name "Moredespicablethananyoneelse"
+   git config --global user.emal "donotblieveit@outlook.com"
+2：下载zjrbackends仓库代码
+   git clone  https://github.com/Moredespicablethananyoneelse/zjrbackends.git
+ 
+   可能会遇到的问题
+
+   Question:
 	unable to connect to git server via http: HTTP/2 stream 0 was not closed cleanly: PROTOCOL_ERROR (err 1)
-Anwser: 
+   Anwser: 
 	https://stackoverflow.com/questions/70700776/unable-to-connect-to-git-server-via-http-http-2-stream-0-was-not-closed-cleanly
+        可能的原因是我上面的git clone的链接是https格式
+        将上面的git clone  https://github.com/Moredespicablethananyoneelse/zjrbackends.git修改成下面的链接
+        git clone git@github.com:Moredespicablethananyoneelse/zjrbackends.git
+        可像往常一样正常使用git等相关命令
+
+
+
+3：下载zjrbackends仓库代码
+[zjr@VM-24-5-centos ~]$ git clone git@github.com:Moredespicablethananyoneelse/zjrbackends.git
+Cloning into 'zjrbackends'...
+The authenticity of host 'github.com (20.205.243.166)' can't be established.
+ED25519 key fingerprint is SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added 'github.com' (ED25519) to the list of known hosts.
+remote: Enumerating objects: 3, done.
+remote: Counting objects: 100% (3/3), done.
+remote: Total 3 (delta 0), reused 0 (delta 0), pack-reused 0 (from 0)
+Receiving objects: 100% (3/3), done.
+
+4:本地路径下出现zjrbackends文件夹
+[zjr@VM-24-5-centos ~]$ ls
+doc  README.md  zjrbackends
+5：zjrbackends文件夹下包含默认的README.md文件
+[zjr@VM-24-5-centos ~]$ ls zjrbackends/
+README.md
+
+6:将我们前面修改号的README.md中的内容拷贝到zjrbackends/README.md文件中
+[zjr@VM-24-5-centos ~]$ cat README.md > zjrbackends/README.md
+7：将我们前面创建好的doc文件夹及其中的内容拷贝到zjrbackends/README.md中
+[zjr@VM-24-5-centos ~]$ cp -r doc/ zjrbackends/
+[zjr@VM-24-5-centos ~]$ ls zjrbackends/
+doc  README.md
+[zjr@VM-24-5-centos ~]$ ls
+doc  README.md  zjrbackends
+[zjr@VM-24-5-centos ~]$ rm -rf doc/ README.md
+[zjr@VM-24-5-centos ~]$ ls
+zjrbackends
+[zjr@VM-24-5-centos ~]$ cd zjrbackends/
+[zjr@VM-24-5-centos zjrbackends]$ ls
+doc  README.md
+[zjr@VM-24-5-centos zjrbackends]$ git status
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   README.md
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        doc/
+
+no changes added to commit (use "git add" and/or "git commit -a")
+[zjr@VM-24-5-centos zjrbackends]$ git add README.md
+[zjr@VM-24-5-centos zjrbackends]$ git add doc/
+[zjr@VM-24-5-centos zjrbackends]$ git commit -m "init repository"
+[main 6035c6e] init repository
+ 2 files changed, 18 insertions(+), 1 deletion(-)
+ create mode 100644 doc/git/git-manual
+[zjr@VM-24-5-centos zjrbackends]$ git push -u origin
+Enumerating objects: 8, done.
+Counting objects: 100% (8/8), done.
+Delta compression using up to 2 threads
+Compressing objects: 100% (4/4), done.
+Writing objects: 100% (6/6), 777 bytes | 777.00 KiB/s, done.
+Total 6 (delta 0), reused 0 (delta 0), pack-reused 0
+To github.com:Moredespicablethananyoneelse/zjrbackends.git
+   c7f1986..6035c6e  main -> main
+branch 'main' set up to track 'origin/main'.
+[zjr@VM-24-5-centos zjrbackends]$
+
 
 
 
