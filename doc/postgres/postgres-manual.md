@@ -1,0 +1,82 @@
+参考文献
+https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/configuring_and_using_database_servers/using-postgresql_configuring-and-using-database-servers#installing-postgresql_using-postgresql
+
+0：简介
+  PostgreSQL server是一款建立在sql语言基础上的开源，稳定，可扩展性强的数据库服务。
+
+1：安装PostgreSQL
+   RHEL9（本机使用的是Centos-Stream-9）提供的该数据库的PostgreSQL 13版本。所以可以很简单的使用RPM安装
+
+   安装过程：
+   切换到root用户
+   [zjr@VM-24-5-centos ~]$ su - root
+   Password:
+   Last login: Thu Oct 17 19:17:16 CST 2024 on pts/2
+
+
+   给账户zjr赋予sudo权限
+   [root@VM-24-5-centos ~]# usermod -aG wheel zjr
+   [root@VM-24-5-centos ~]#
+   
+   切换到zjr账户 
+   [root@VM-24-5-centos ~]# su - zjr
+   Last login: Thu Oct 17 21:50:57 CST 2024 from 223.104.41.205 on pts/0
+   
+   安装postgresql-server 注意我们此处安装的是PostgreSql 16不是默认的PostgreSql 13(使用dnf install postgresql-server安装13）.
+
+   [zjr@VM-24-5-centos ~]$  dnf module install postgresql:16/server
+Error: This command has to be run with superuser privileges (under the root user on most systems).
+[zjr@VM-24-5-centos ~]$ sudo dnf module install postgresql:16/server
+Last metadata expiration check: 1:37:02 ago on Thu 17 Oct 2024 08:57:24 PM CST.
+Dependencies resolved.
+=====================================================================================================================================
+ Package                              Architecture        Version                                       Repository              Size
+=====================================================================================================================================
+Installing group/module packages:
+ postgresql-server                    x86_64              16.4-2.module_el9+1109+d821d6e7               appstream              7.0 M
+Installing dependencies:
+ libicu                               x86_64              67.1-9.el9                                    baseos                 9.6 M
+ postgresql                           x86_64              16.4-2.module_el9+1109+d821d6e7               appstream              1.9 M
+ postgresql-private-libs              x86_64              16.4-2.module_el9+1109+d821d6e7               appstream              144 k
+Installing module profiles:
+ postgresql/server
+Enabling module streams:
+ postgresql                                               16
+
+Transaction Summary
+=====================================================================================================================================
+Install  4 Packages
+
+Total download size: 19 M
+Installed size: 70 M
+Is this ok [y/N]: y
+Downloading Packages:
+(1/4): postgresql-private-libs-16.4-2.module_el9+1109+d821d6e7.x86_64.rpm                            594 kB/s | 144 kB     00:00
+(2/4): postgresql-16.4-2.module_el9+1109+d821d6e7.x86_64.rpm                                         4.1 MB/s | 1.9 MB     00:00
+(3/4): libicu-67.1-9.el9.x86_64.rpm                                                                   17 MB/s | 9.6 MB     00:00
+(4/4): postgresql-server-16.4-2.module_el9+1109+d821d6e7.x86_64.rpm                                  8.3 MB/s | 7.0 MB     00:00
+-------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                 22 MB/s |  19 MB     00:00
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                                                                             1/1
+  Installing       : postgresql-private-libs-16.4-2.module_el9+1109+d821d6e7.x86_64                                              1/4
+  Installing       : postgresql-16.4-2.module_el9+1109+d821d6e7.x86_64                                                           2/4
+  Installing       : libicu-67.1-9.el9.x86_64                                                                                    3/4
+  Running scriptlet: postgresql-server-16.4-2.module_el9+1109+d821d6e7.x86_64                                                    4/4
+  Installing       : postgresql-server-16.4-2.module_el9+1109+d821d6e7.x86_64                                                    4/4
+  Running scriptlet: postgresql-server-16.4-2.module_el9+1109+d821d6e7.x86_64                                                    4/4
+  Verifying        : postgresql-16.4-2.module_el9+1109+d821d6e7.x86_64                                                           1/4
+  Verifying        : postgresql-private-libs-16.4-2.module_el9+1109+d821d6e7.x86_64                                              2/4
+  Verifying        : postgresql-server-16.4-2.module_el9+1109+d821d6e7.x86_64                                                    3/4
+  Verifying        : libicu-67.1-9.el9.x86_64                                                                                    4/4
+
+Installed:
+  libicu-67.1-9.el9.x86_64                                             postgresql-16.4-2.module_el9+1109+d821d6e7.x86_64
+  postgresql-private-libs-16.4-2.module_el9+1109+d821d6e7.x86_64       postgresql-server-16.4-2.module_el9+1109+d821d6e7.x86_64
+
+Complete!
+[zjr@VM-24-5-centos ~]$
