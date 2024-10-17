@@ -80,3 +80,74 @@ Installed:
 
 Complete!
 [zjr@VM-24-5-centos ~]$
+
+
+初始化数据库集群
+[zjr@VM-24-5-centos zjrbackends]$ sudo postgresql-setup --initdb
+[sudo] password for zjr:
+ * Initializing database in '/var/lib/pgsql/data'
+ * Initialized, logs are in /var/lib/pgsql/initdb_postgresql.log
+[zjr@VM-24-5-centos zjrbackends]$
+
+
+
+修改配置文件postgresql.conf中的
+#password_encryption = md5              # md5 or scram-sha-256
+为
+password_encryption = scram-sha-256
+方法如下：
+[zjr@VM-24-5-centos ~]$ sudo ls /var/lib/pgsql/data/postgresql.conf
+/var/lib/pgsql/data/postgresql.conf
+[zjr@VM-24-5-centos ~]$ sudo vim /var/lib/pgsql/data/postgresql.conf
+[zjr@VM-24-5-centos ~]$
+
+修改配置文件/var/lib/pgsql/data/pg_hba.conf中host    all             all             127.0.0.1/32            ident
+为host    all             all             127.0.0.1/32            scram-sha-256
+[zjr@VM-24-5-centos ~]$ sudo vim /var/lib/pgsql/data/pg_hba.conf
+
+
+启动服务器
+[zjr@VM-24-5-centos ~]$ sudo systemctl start postgresql.service
+检查服务器是否启动成功
+[zjr@VM-24-5-centos ~]$ sudo systemctl status postgresql
+● postgresql.service - PostgreSQL database server
+     Loaded: loaded (/usr/lib/systemd/system/postgresql.service; disabled; vendor preset: disabled)
+     Active: active (running) since Thu 2024-10-17 23:00:54 CST; 1min 19s ago
+    Process: 150057 ExecStartPre=/usr/libexec/postgresql-check-db-dir postgresql (code=exited, status=0/SUCCESS)
+   Main PID: 150059 (postgres)
+      Tasks: 7 (limit: 10715)
+     Memory: 19.3M
+        CPU: 80ms
+     CGroup: /system.slice/postgresql.service
+             ├─150059 /usr/bin/postgres -D /var/lib/pgsql/data
+             ├─150060 "postgres: logger " "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" ""
+             ├─150061 "postgres: checkpointer " "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" ""
+             ├─150062 "postgres: background writer " "" "" "" "" "" "" "" "" "" "" "" ""
+             ├─150064 "postgres: walwriter " "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" ""
+             ├─150065 "postgres: autovacuum launcher " "" "" "" "" "" "" "" "" "" ""
+             └─150066 "postgres: logical replication launcher " ""
+
+Oct 17 23:00:54 VM-24-5-centos systemd[1]: Starting PostgreSQL database server...
+Oct 17 23:00:54 VM-24-5-centos postgres[150059]: 2024-10-17 23:00:54.916 CST [150059] LOG:  redirecting log output to l>
+Oct 17 23:00:54 VM-24-5-centos postgres[150059]: 2024-10-17 23:00:54.916 CST [150059] HINT:  Future log output will app>
+Oct 17 23:00:54 VM-24-5-centos systemd[1]: Started PostgreSQL database server.
+
+
+切换到系统用户postgres
+
+[zjr@VM-24-5-centos ~]$ sudo su - postgres
+[postgres@VM-24-5-centos ~]$
+
+
+启动postgresql交互式命令终端
+[zjr@VM-24-5-centos ~]$ sudo su - postgres
+[postgres@VM-24-5-centos ~]$ psql
+psql (16.4)
+Type "help" for help.
+
+postgres=#
+
+获取当前的链接信息
+postgres=# \conninfo
+You are connected to database "postgres" as user "postgres" via socket in "/var/run/postgresql" at port "5432".
+postgres=#
