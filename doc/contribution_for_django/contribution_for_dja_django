@@ -1,0 +1,101 @@
+#参考文档
+https://docs.djangoproject.com/en/5.1/intro/contributing/#intro-contributing-install-local-copy
+
+##创建路径contribution_for_django
+[zjr@VM-24-5-centos ~]$ mkdir contribution_for_django
+[zjr@VM-24-5-centos ~]$ pwd
+/home/zjr
+[zjr@VM-24-5-centos ~]$ ls
+contribution_for_django  zjrbackends
+
+##切换路径到contribution_for_django
+[zjr@VM-24-5-centos ~]$ cd contribution_for_django/
+[zjr@VM-24-5-centos contribution_for_django]$ ls
+
+
+##下载django源码，但是只要最新版，不要提交历史的其他各个版本，大概节省几百兆的流量
+__此前通过github网站fork了django的分支，所以下面的地址是自己的仓库的
+[zjr@VM-24-5-centos contribution_for_django]$ git clone --depth 1 https://github.com/Moredespicablethananyoneelse/django.git
+Cloning into 'django'...
+remote: Enumerating objects: 9293, done.
+remote: Counting objects: 100% (9293/9293), done.
+remote: Compressing objects: 100% (5777/5777), done.
+remote: Total 9293 (delta 2222), reused 8736 (delta 2125), pack-reused 0 (from 0)
+Receiving objects: 100% (9293/9293), 11.35 MiB | 9.91 MiB/s, done.
+Resolving deltas: 100% (2222/2222), done.
+[zjr@VM-24-5-centos contribution_for_django]$ ls
+django
+[zjr@VM-24-5-centos contribution_for_django]$ pwd
+/home/zjr/contribution_for_django
+[zjr@VM-24-5-centos contribution_for_django]$ pwd
+/home/zjr/contribution_for_django
+[zjr@VM-24-5-centos contribution_for_django]$ ls
+django
+[zjr@VM-24-5-centos contribution_for_django]$ ls
+django
+
+##创建虚拟环境存放路径（统一存放所有项目的环境依赖）##
+[zjr@VM-24-5-centos contribution_for_django]$ mkdir .virtualenvs
+[zjr@VM-24-5-centos contribution_for_django]$ pwd
+/home/zjr/contribution_for_django
+[zjr@VM-24-5-centos contribution_for_django]$ ls
+django
+[zjr@VM-24-5-centos contribution_for_django]$ ls -al
+total 16
+drwxr-xr-x  4 zjr zjr 4096 Oct 18 15:19 .
+drwx------  6 zjr zjr 4096 Oct 18 15:17 ..
+drwxr-xr-x 11 zjr zjr 4096 Oct 18 15:18 django
+drwxr-xr-x  2 zjr zjr 4096 Oct 18 15:19 .virtualenvs
+
+##python自带venv模块，在.virtualenvs创建开发django所需要的环境路径djangodev##
+[zjr@VM-24-5-centos contribution_for_django]$ python3.12 -m venv .virtualenvs/djangodev
+[zjr@VM-24-5-centos contribution_for_django]$ ls .virtualenvs/djangodev/
+bin  include  lib  lib64  pyvenv.cfg
+
+
+##启用环境djangodev##
+[zjr@VM-24-5-centos contribution_for_django]$ source .virtualenvs/djangodev/bin/activate
+
+
+##将刚刚下载的django安装到启用的环境djangodev中
+(djangodev) [zjr@VM-24-5-centos contribution_for_django]$ python -m pip install -e django/
+AUTHORS                  .flake8                  INSTALL                  pyproject.toml
+CONTRIBUTING.rst         .git/                    js_tests/                README.rst
+django/                  .gitattributes           LICENSE                  .readthedocs.yml
+docs/                    .git-blame-ignore-revs   LICENSE.python           scripts/
+.editorconfig            .github/                 MANIFEST.in              tests/
+eslint.config.mjs        .gitignore               package.json             tox.ini
+extras/                  Gruntfile.js             .pre-commit-config.yaml  .tx/
+(djangodev) [zjr@VM-24-5-centos contribution_for_django]$ python -m pip install -e django/
+Obtaining file:///home/zjr/contribution_for_django/django
+  Installing build dependencies ... done
+  Checking if build backend supports build_editable ... done
+  Getting requirements to build editable ... done
+  Installing backend dependencies ... done
+  Preparing editable metadata (pyproject.toml) ... done
+Collecting asgiref>=3.8.1 (from Django==5.2.dev20241018004053)
+  Obtaining dependency information for asgiref>=3.8.1 from https://files.pythonhosted.org/packages/39/e3/893e8757be2612e6c266d9bb58ad2e3651524b5b40cf56761e985a28b13e/asgiref-3.8.1-py3-none-any.whl.metadata
+  WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0x7feabbedfda0>: Failed to establish a new connection: [Errno 101] Network is unreachable')': /packages/39/e3/893e8757be2612e6c266d9bb58ad2e3651524b5b40cf56761e985a28b13e/asgiref-3.8.1-py3-none-any.whl.metadata
+  Downloading asgiref-3.8.1-py3-none-any.whl.metadata (9.3 kB)
+Collecting sqlparse>=0.3.1 (from Django==5.2.dev20241018004053)
+  Obtaining dependency information for sqlparse>=0.3.1 from https://files.pythonhosted.org/packages/5d/a5/b2860373aa8de1e626b2bdfdd6df4355f0565b47e51f7d0c54fe70faf8fe/sqlparse-0.5.1-py3-none-any.whl.metadata
+  Downloading sqlparse-0.5.1-py3-none-any.whl.metadata (3.9 kB)
+Downloading asgiref-3.8.1-py3-none-any.whl (23 kB)
+Downloading sqlparse-0.5.1-py3-none-any.whl (44 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.2/44.2 kB 26.1 kB/s eta 0:00:00
+Building wheels for collected packages: Django
+  Building editable for Django (pyproject.toml) ... done
+  Created wheel for Django: filename=Django-5.2.dev20241018004053-0.editable-py3-none-any.whl size=47534 sha256=e761dc3d931d3a1c05fdf2e35688c0004e4cc2ecfb0a48dd20082631ddc02d3f
+  Stored in directory: /tmp/pip-ephem-wheel-cache-3w2wamm9/wheels/6d/5b/b1/90a4a684faf3d6b883495fba52eeda6971696665afe7289c27
+Successfully built Django
+Installing collected packages: sqlparse, asgiref, Django
+Successfully installed Django-5.2.dev20241018004053 asgiref-3.8.1 sqlparse-0.5.1
+
+[notice] A new release of pip is available: 23.2.1 -> 24.2
+[notice] To update, run: pip install --upgrade pip
+(djangodev) [zjr@VM-24-5-centos contribution_for_django]$
+
+
+##这样安装的django是编辑模式，它指向你本地的django代码，你对本地的django代码做的改动会立即看到反应
+"也就是说如果你创建个项目使用刚刚安装的django，你对django的修改会理解反应到这个创建的django项目上,有关如何创建django项目的方法请参考tutorial"
+"还有一点需要注意，下载的django源码和.virtualenvs/djangodev是没有任何关系的。只是通过venv的执行将django源码安装到了.virtualenvs/djangodev中"
