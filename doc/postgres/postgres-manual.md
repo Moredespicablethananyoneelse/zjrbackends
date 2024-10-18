@@ -203,3 +203,10 @@ zjr20241017=>
 zjr20241017=> \conninfo
 You are connected to database "zjr20241017" as user "zjr" on host "127.0.0.1" at port "5432".
 zjr20241017=>
+
+
+/*******
+https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/configuring_and_using_database_servers/using-postgresql_configuring-and-using-database-servers#proc_configuring-tls-encryption-on-a-postgresql-server_using-postgresql
+其中的Example 4.4. Initializing, creating, and connecting to a PostgreSQL database using TLS encryption有个grant某个数据库权限给某个用户的过程。但是Example 4.1. Initializing, creating, and connecting to a PostgreSQL database没有。两个例子不同的是：后者创建的用户具有createdb权限，同时后者的数据库的创建者就是这个创建的用户，所以不需要额外授权
+
+********/
