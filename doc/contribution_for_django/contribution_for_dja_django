@@ -58,6 +58,12 @@ bin  include  lib  lib64  pyvenv.cfg
 
 
 ##将刚刚下载的django安装到启用的环境djangodev中
+#This will make Django’s code importable, 
+#and will also make the django-admin utility command available. In other words, you’re all set!
+# 实际上是按照setup相关的文件描述自python的site_packages路径下创建了软连接
+# When you want to update your copy of the Django source code, 
+# run the command git pull from within the django directory. When you do this, Git will download any changes.
+# The installed version of Django is now pointing at your local copy by installing in editable mode. You will immediately see any changes you make to it, which is of great help when writing your first contribution.
 (djangodev) [zjr@VM-24-5-centos contribution_for_django]$ python -m pip install -e django/
 AUTHORS                  .flake8                  INSTALL                  pyproject.toml
 CONTRIBUTING.rst         .git/                    js_tests/                README.rst
@@ -3905,3 +3911,10 @@ Installed:
   libmemcached-awesome-1.1.0-12.el9.x86_64   libmemcached-awesome-devel-1.1.0-12.el9.x86_64
 
 Complete!
+#整个django/tests路径下运行 python -m pip install -r requirements/py3.txt已经可以通过了
+#切换到django/tests路径下运行run-tests.py脚本.这台服务器的内存太小，所以运行不下去。
+#
+###参考文档https://forums.rockylinux.org/t/error-no-matching-repo-to-modify-crb-oracle-linux-9-rocky-linux-9/8401/4
+#上面的链接主要将oracle linux的code ready builder叫另一个名字（可能是因为商标版权问题）
+# 这个编译的工作已经做完了。做django项目安装的有些依赖需要编译一些平台相关的库，所以这个搭建django运行环境的过程是有必要的，这样可以解决以后可能会遇到的很多编译问题
+# 可以钱换到get_started_django项目继续了
