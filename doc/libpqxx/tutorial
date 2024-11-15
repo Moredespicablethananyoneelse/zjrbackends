@@ -1,0 +1,1920 @@
+参考文档 https://github.com/jtv/libpqxx
+
+##因为libpqxx 8.x需要c++ 20, 而centos stream 9 自带的gcc是11，所以我使用了gcc-toolset-14 工具，gcc-toolset-14的安装，请参考已提交文档
+[zjr@VM-24-5-centos ~]$ scl enable gcc-toolset-14 bash
+[zjr@VM-24-5-centos ~]$ gcc --version
+gcc (GCC) 14.2.1 20240801 (Red Hat 14.2.1-1)
+Copyright (C) 2024 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+##因为libpgxx依赖libpg,查看libpg库
+[zjr@VM-24-5-centos libpqxx]$ sudo dnf search '*libpq*'
+[sudo] password for zjr: 
+Repository baseos is listed more than once in the configuration
+Repository baseos-source is listed more than once in the configuration
+Repository appstream is listed more than once in the configuration
+Repository appstream-source is listed more than once in the configuration
+Repository rt is listed more than once in the configuration
+Repository rt-source is listed more than once in the configuration
+Repository resilientstorage is listed more than once in the configuration
+Repository resilientstorage-source is listed more than once in the configuration
+Last metadata expiration check: 0:29:25 ago on Fri 15 Nov 2024 09:11:04 AM CST.
+======================================================================= Name Matched: *libpq* ========================================================================
+libpq.i686 : PostgreSQL client library
+libpq.x86_64 : PostgreSQL client library
+libpq-devel.i686 : Development files for building PostgreSQL client tools
+libpq-devel.x86_64 : Development files for building PostgreSQL client tools
+[zjr@VM-24-5-centos libpqxx]$ 
+##安装libpq
+[zjr@VM-24-5-centos libpqxx]$ sudo dnf install libpq-devel.x86_64
+[sudo] password for zjr: 
+Repository baseos is listed more than once in the configuration
+Repository baseos-source is listed more than once in the configuration
+Repository appstream is listed more than once in the configuration
+Repository appstream-source is listed more than once in the configuration
+Repository rt is listed more than once in the configuration
+Repository rt-source is listed more than once in the configuration
+Repository resilientstorage is listed more than once in the configuration
+Repository resilientstorage-source is listed more than once in the configuration
+Last metadata expiration check: 1:03:37 ago on Fri 15 Nov 2024 09:11:04 AM CST.
+Dependencies resolved.
+======================================================================================================================================================================
+ Package                                  Architecture                        Version                                    Repository                              Size
+======================================================================================================================================================================
+Installing:
+ libpq-devel                              x86_64                              13.15-1.el9                                appstream                               98 k
+Installing dependencies:
+ libpq                                    x86_64                              13.15-1.el9                                appstream                              207 k
+
+Transaction Summary
+======================================================================================================================================================================
+Install  2 Packages
+
+Total download size: 305 k
+Installed size: 1.0 M
+Is this ok [y/N]: y
+Downloading Packages:
+(1/2): libpq-devel-13.15-1.el9.x86_64.rpm                                                                                             441 kB/s |  98 kB     00:00    
+(2/2): libpq-13.15-1.el9.x86_64.rpm                                                                                                   600 kB/s | 207 kB     00:00    
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                                 880 kB/s | 305 kB     00:00     
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                                                                                                              1/1 
+  Installing       : libpq-13.15-1.el9.x86_64                                                                                                                     1/2 
+  Installing       : libpq-devel-13.15-1.el9.x86_64                                                                                                               2/2 
+  Running scriptlet: libpq-devel-13.15-1.el9.x86_64                                                                                                               2/2 
+  Verifying        : libpq-13.15-1.el9.x86_64                                                                                                                     1/2 
+  Verifying        : libpq-devel-13.15-1.el9.x86_64                                                                                                               2/2 
+
+Installed:
+  libpq-13.15-1.el9.x86_64                                                       libpq-devel-13.15-1.el9.x86_64                                                      
+
+Complete!
+[zjr@VM-24-5-centos libpqxx]$
+
+
+## 创建安装路径
+[zjr@VM-24-5-centos libpqxx]$ mkdir libpqxx_install_dir
+[zjr@VM-24-5-centos libpqxx]$ cd libpqxx_install_dir/
+[zjr@VM-24-5-centos libpqxx_install_dir]$ pwd
+/home/zjr/libpqxx/libpqxx_install_dir
+[zjr@VM-24-5-centos libpqxx_install_dir]$ cd ..
+[zjr@VM-24-5-centos libpqxx]$ ls
+libpqxx  libpqxx_install_dir  tutorial
+##源码存放路径
+[zjr@VM-24-5-centos libpqxx]$ cd libpqxx
+[zjr@VM-24-5-centos libpqxx]$ ls
+aclocal.m4    BUILDING-cmake.md      compile_flags.in  configure         doc            Makefile.am                 README.md          test
+appveyor.yml  BUILDING-configure.md  config            configure.ac      include        Makefile.in                 README.rst         tools
+AUTHORS       cmake                  configitems       COPYING           INSTALL        NEWS                        requirements.json  VERSION
+autogen.sh    CMakeLists.txt         config-tests      cxx_features.txt  libpqxx.pc.in  pqxx_cxx_feature_checks.ac  src
+[zjr@VM-24-5-centos libpqxx]$ pwd
+/home/zjr/libpqxx/libpqxx
+[zjr@VM-24-5-centos libpqxx]$ cd ..
+[zjr@VM-24-5-centos libpqxx]$ pwd
+/home/zjr/libpqxx
+[zjr@VM-24-5-centos libpqxx]$ ls
+libpqxx  libpqxx_install_dir  tutorial
+##创建编译路径（分离式编译）
+[zjr@VM-24-5-centos libpqxx]$ mkdir libpqxx_build_dir
+[zjr@VM-24-5-centos libpqxx]$ cd libpqxx_build_dir/
+##configure Libpq
+[zjr@VM-24-5-centos libpqxx_build_dir]$ ../libpqxx/configure  --prefix=/home/zjr/libpqxx/libpqxx_install_dir   CXXFLAGS=-O0
+checking for a BSD-compatible install... /usr/bin/install -c
+checking whether build environment is sane... yes
+checking for a race-free mkdir -p... /usr/bin/mkdir -p
+checking for gawk... gawk
+checking whether make sets $(MAKE)... yes
+checking whether make supports nested variables... yes
+checking for g++... g++
+checking whether the C++ compiler works... yes
+checking for C++ compiler default output file name... a.out
+checking for suffix of executables... 
+checking whether we are cross compiling... no
+checking for suffix of object files... o
+checking whether the compiler supports GNU C++... yes
+checking whether g++ accepts -g... yes
+checking for g++ option to enable C++11 features... none needed
+checking whether make supports the include directive... yes (GNU style)
+checking dependency style of g++... gcc3
+checking build system type... x86_64-pc-linux-gnu
+checking host system type... x86_64-pc-linux-gnu
+checking how to print strings... printf
+checking for gcc... gcc
+checking whether the compiler supports GNU C... yes
+checking whether gcc accepts -g... yes
+checking for gcc option to enable C11 features... none needed
+checking whether gcc understands -c and -o together... yes
+checking dependency style of gcc... gcc3
+checking for a sed that does not truncate output... /usr/bin/sed
+checking for grep that handles long lines and -e... /usr/bin/grep
+checking for egrep... /usr/bin/grep -E
+checking for fgrep... /usr/bin/grep -F
+checking for ld used by gcc... /opt/rh/gcc-toolset-14/root/usr/libexec/gcc/x86_64-redhat-linux/14/ld
+checking if the linker (/opt/rh/gcc-toolset-14/root/usr/libexec/gcc/x86_64-redhat-linux/14/ld) is GNU ld... yes
+checking for BSD- or MS-compatible name lister (nm)... /opt/rh/gcc-toolset-14/root/usr/bin/nm -B
+checking the name lister (/opt/rh/gcc-toolset-14/root/usr/bin/nm -B) interface... BSD nm
+checking whether ln -s works... yes
+checking the maximum length of command line arguments... 1572864
+checking how to convert x86_64-pc-linux-gnu file names to x86_64-pc-linux-gnu format... func_convert_file_noop
+checking how to convert x86_64-pc-linux-gnu file names to toolchain format... func_convert_file_noop
+checking for /opt/rh/gcc-toolset-14/root/usr/libexec/gcc/x86_64-redhat-linux/14/ld option to reload object files... -r
+checking for file... file
+checking for objdump... objdump
+checking how to recognize dependent libraries... pass_all
+checking for dlltool... no
+checking how to associate runtime and link libraries... printf %s\n
+checking for ar... ar
+checking for archiver @FILE support... @
+checking for strip... strip
+checking for ranlib... ranlib
+checking command to parse /opt/rh/gcc-toolset-14/root/usr/bin/nm -B output from gcc object... ok
+checking for sysroot... no
+checking for a working dd... /usr/bin/dd
+checking how to truncate binary pipes... /usr/bin/dd bs=4096 count=1
+checking for mt... no
+checking if : is a manifest tool... no
+checking for stdio.h... yes
+checking for stdlib.h... yes
+checking for string.h... yes
+checking for inttypes.h... yes
+checking for stdint.h... yes
+checking for strings.h... yes
+checking for sys/stat.h... yes
+checking for sys/types.h... yes
+checking for unistd.h... yes
+checking for dlfcn.h... yes
+checking for objdir... .libs
+checking if gcc supports -fno-rtti -fno-exceptions... no
+checking for gcc option to produce PIC... -fPIC -DPIC
+checking if gcc PIC flag -fPIC -DPIC works... yes
+checking if gcc static flag -static works... no
+checking if gcc supports -c -o file.o... yes
+checking if gcc supports -c -o file.o... (cached) yes
+checking whether the gcc linker (/opt/rh/gcc-toolset-14/root/usr/libexec/gcc/x86_64-redhat-linux/14/ld -m elf_x86_64) supports shared libraries... yes
+checking dynamic linker characteristics... GNU/Linux ld.so
+checking how to hardcode library paths into programs... immediate
+checking whether stripping libraries is possible... yes
+checking if libtool supports shared libraries... yes
+checking whether to build shared libraries... no
+checking whether to build static libraries... yes
+checking how to run the C++ preprocessor... g++ -E
+checking for ld used by g++... /opt/rh/gcc-toolset-14/root/usr/libexec/gcc/x86_64-redhat-linux/14/ld -m elf_x86_64
+checking if the linker (/opt/rh/gcc-toolset-14/root/usr/libexec/gcc/x86_64-redhat-linux/14/ld -m elf_x86_64) is GNU ld... yes
+checking whether the g++ linker (/opt/rh/gcc-toolset-14/root/usr/libexec/gcc/x86_64-redhat-linux/14/ld -m elf_x86_64) supports shared libraries... yes
+checking for g++ option to produce PIC... -fPIC -DPIC
+checking if g++ PIC flag -fPIC -DPIC works... yes
+checking if g++ static flag -static works... no
+checking if g++ supports -c -o file.o... yes
+checking if g++ supports -c -o file.o... (cached) yes
+checking whether the g++ linker (/opt/rh/gcc-toolset-14/root/usr/libexec/gcc/x86_64-redhat-linux/14/ld -m elf_x86_64) supports shared libraries... yes
+checking dynamic linker characteristics... (cached) GNU/Linux ld.so
+checking how to hardcode library paths into programs... immediate
+checking whether make sets $(MAKE)... (cached) yes
+checking for mkdir... /usr/bin/mkdir
+checking whether to enable maintainer-specific portions of Makefiles... no
+checking maintainer mode... 
+checking audit... 
+checking suggest... 
+checking for sufficient C++ language/library level... yes
+checking PQXX_HAVE_ASSUME... yes
+checking PQXX_HAVE_CHARCONV_FLOAT... yes
+checking PQXX_HAVE_CHARCONV_INT... yes
+checking PQXX_HAVE_CMP... no
+checking PQXX_HAVE_CONCEPTS... no
+checking PQXX_HAVE_CXA_DEMANGLE... yes
+checking PQXX_HAVE_GCC_PURE... yes
+checking PQXX_HAVE_GCC_VISIBILITY... yes
+checking PQXX_HAVE_LIKELY... no
+checking PQXX_HAVE_MULTIDIM... no
+checking PQXX_HAVE_PATH... yes
+checking PQXX_HAVE_POLL... yes
+checking PQXX_HAVE_SLEEP_FOR... yes
+checking PQXX_HAVE_SOURCE_LOCATION... no
+checking PQXX_HAVE_SPAN... no
+checking PQXX_HAVE_SSIZE... no
+checking PQXX_HAVE_STRERROR_R... yes
+checking PQXX_HAVE_STRERROR_S... no
+checking PQXX_HAVE_THREAD_LOCAL... yes
+checking PQXX_HAVE_YEAR_MONTH_DAY... no
+checking no_need_fslib... yes
+checking for pkg-config... /usr/bin/pkg-config
+checking for pg_config... /usr/bin/pg_config
+configure: finding PostgreSQL headers using -I/usr/include
+configure: using PostgreSQL libraries at /usr/lib64
+checking for libpq-fe.h... yes
+checking for ability to compile source files using libpq... yes
+checking for PQexec in -lpq... yes
+checking whether we need a link option for <filesystem> support... 
+checking that type of libpq's Oid is as expected... yes
+checking whether make sets $(MAKE)... (cached) yes
+checking that generated files are newer than configure... done
+configure: creating ./config.status
+config.status: creating Makefile
+config.status: creating config/Makefile
+config.status: creating doc/Makefile
+config.status: creating src/Makefile
+config.status: creating test/Makefile
+config.status: creating tools/Makefile
+config.status: creating include/Makefile
+config.status: creating include/pqxx/Makefile
+config.status: creating libpqxx.pc
+config.status: creating compile_flags
+config.status: creating include/pqxx/config.h
+config.status: executing depfiles commands
+config.status: executing libtool commands
+config.status: executing configitems commands
+Generating b'/home/zjr/libpqxx/libpqxx_build_dir/include/pqxx/config-internal-autotools.h': 7 item(s).
+Generating b'/home/zjr/libpqxx/libpqxx_build_dir/include/pqxx/config-internal-compiler.h': 6 item(s).
+Generating b'/home/zjr/libpqxx/libpqxx_build_dir/include/pqxx/config-public-autotools.h': 0 item(s).
+Generating b'/home/zjr/libpqxx/libpqxx_build_dir/include/pqxx/config-public-compiler.h': 5 item(s).
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+
+
+##make
+[zjr@VM-24-5-centos libpqxx_build_dir]$ make
+Making all in include
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/include'
+Making all in pqxx
+make[2]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/include/pqxx'
+make  all-am
+make[3]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/include/pqxx'
+make[3]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/include/pqxx'
+make[2]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/include/pqxx'
+make[2]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/include'
+make[2]: Nothing to be done for 'all-am'.
+make[2]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/include'
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/include'
+Making all in src
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/src'
+depbase=`echo array.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT array.lo -MD -MP -MF $depbase.Tpo -c -o array.lo ../../libpqxx/src/array.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT array.lo -MD -MP -MF .deps/array.Tpo -c ../../libpqxx/src/array.cxx -o array.o
+depbase=`echo binarystring.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT binarystring.lo -MD -MP -MF $depbase.Tpo -c -o binarystring.lo ../../libpqxx/src/binarystring.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT binarystring.lo -MD -MP -MF .deps/binarystring.Tpo -c ../../libpqxx/src/binarystring.cxx -o binarystring.o
+depbase=`echo blob.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT blob.lo -MD -MP -MF $depbase.Tpo -c -o blob.lo ../../libpqxx/src/blob.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT blob.lo -MD -MP -MF .deps/blob.Tpo -c ../../libpqxx/src/blob.cxx -o blob.o
+depbase=`echo connection.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT connection.lo -MD -MP -MF $depbase.Tpo -c -o connection.lo ../../libpqxx/src/connection.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT connection.lo -MD -MP -MF .deps/connection.Tpo -c ../../libpqxx/src/connection.cxx -o connection.o
+depbase=`echo cursor.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT cursor.lo -MD -MP -MF $depbase.Tpo -c -o cursor.lo ../../libpqxx/src/cursor.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT cursor.lo -MD -MP -MF .deps/cursor.Tpo -c ../../libpqxx/src/cursor.cxx -o cursor.o
+depbase=`echo encodings.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT encodings.lo -MD -MP -MF $depbase.Tpo -c -o encodings.lo ../../libpqxx/src/encodings.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT encodings.lo -MD -MP -MF .deps/encodings.Tpo -c ../../libpqxx/src/encodings.cxx -o encodings.o
+depbase=`echo errorhandler.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT errorhandler.lo -MD -MP -MF $depbase.Tpo -c -o errorhandler.lo ../../libpqxx/src/errorhandler.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT errorhandler.lo -MD -MP -MF .deps/errorhandler.Tpo -c ../../libpqxx/src/errorhandler.cxx -o errorhandler.o
+depbase=`echo except.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT except.lo -MD -MP -MF $depbase.Tpo -c -o except.lo ../../libpqxx/src/except.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT except.lo -MD -MP -MF .deps/except.Tpo -c ../../libpqxx/src/except.cxx -o except.o
+depbase=`echo field.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT field.lo -MD -MP -MF $depbase.Tpo -c -o field.lo ../../libpqxx/src/field.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT field.lo -MD -MP -MF .deps/field.Tpo -c ../../libpqxx/src/field.cxx -o field.o
+depbase=`echo largeobject.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT largeobject.lo -MD -MP -MF $depbase.Tpo -c -o largeobject.lo ../../libpqxx/src/largeobject.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT largeobject.lo -MD -MP -MF .deps/largeobject.Tpo -c ../../libpqxx/src/largeobject.cxx -o largeobject.o
+depbase=`echo notification.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT notification.lo -MD -MP -MF $depbase.Tpo -c -o notification.lo ../../libpqxx/src/notification.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT notification.lo -MD -MP -MF .deps/notification.Tpo -c ../../libpqxx/src/notification.cxx -o notification.o
+depbase=`echo params.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT params.lo -MD -MP -MF $depbase.Tpo -c -o params.lo ../../libpqxx/src/params.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT params.lo -MD -MP -MF .deps/params.Tpo -c ../../libpqxx/src/params.cxx -o params.o
+depbase=`echo pipeline.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT pipeline.lo -MD -MP -MF $depbase.Tpo -c -o pipeline.lo ../../libpqxx/src/pipeline.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT pipeline.lo -MD -MP -MF .deps/pipeline.Tpo -c ../../libpqxx/src/pipeline.cxx -o pipeline.o
+depbase=`echo result.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT result.lo -MD -MP -MF $depbase.Tpo -c -o result.lo ../../libpqxx/src/result.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT result.lo -MD -MP -MF .deps/result.Tpo -c ../../libpqxx/src/result.cxx -o result.o
+depbase=`echo robusttransaction.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT robusttransaction.lo -MD -MP -MF $depbase.Tpo -c -o robusttransaction.lo ../../libpqxx/src/robusttransaction.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT robusttransaction.lo -MD -MP -MF .deps/robusttransaction.Tpo -c ../../libpqxx/src/robusttransaction.cxx -o robusttransaction.o
+depbase=`echo sql_cursor.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT sql_cursor.lo -MD -MP -MF $depbase.Tpo -c -o sql_cursor.lo ../../libpqxx/src/sql_cursor.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT sql_cursor.lo -MD -MP -MF .deps/sql_cursor.Tpo -c ../../libpqxx/src/sql_cursor.cxx -o sql_cursor.o
+depbase=`echo strconv.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT strconv.lo -MD -MP -MF $depbase.Tpo -c -o strconv.lo ../../libpqxx/src/strconv.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT strconv.lo -MD -MP -MF .deps/strconv.Tpo -c ../../libpqxx/src/strconv.cxx -o strconv.o
+depbase=`echo stream_from.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT stream_from.lo -MD -MP -MF $depbase.Tpo -c -o stream_from.lo ../../libpqxx/src/stream_from.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT stream_from.lo -MD -MP -MF .deps/stream_from.Tpo -c ../../libpqxx/src/stream_from.cxx -o stream_from.o
+depbase=`echo stream_to.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT stream_to.lo -MD -MP -MF $depbase.Tpo -c -o stream_to.lo ../../libpqxx/src/stream_to.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT stream_to.lo -MD -MP -MF .deps/stream_to.Tpo -c ../../libpqxx/src/stream_to.cxx -o stream_to.o
+depbase=`echo subtransaction.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT subtransaction.lo -MD -MP -MF $depbase.Tpo -c -o subtransaction.lo ../../libpqxx/src/subtransaction.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT subtransaction.lo -MD -MP -MF .deps/subtransaction.Tpo -c ../../libpqxx/src/subtransaction.cxx -o subtransaction.o
+depbase=`echo time.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT time.lo -MD -MP -MF $depbase.Tpo -c -o time.lo ../../libpqxx/src/time.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT time.lo -MD -MP -MF .deps/time.Tpo -c ../../libpqxx/src/time.cxx -o time.o
+depbase=`echo transaction.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT transaction.lo -MD -MP -MF $depbase.Tpo -c -o transaction.lo ../../libpqxx/src/transaction.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT transaction.lo -MD -MP -MF .deps/transaction.Tpo -c ../../libpqxx/src/transaction.cxx -o transaction.o
+depbase=`echo transaction_base.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT transaction_base.lo -MD -MP -MF $depbase.Tpo -c -o transaction_base.lo ../../libpqxx/src/transaction_base.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT transaction_base.lo -MD -MP -MF .deps/transaction_base.Tpo -c ../../libpqxx/src/transaction_base.cxx -o transaction_base.o
+depbase=`echo row.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT row.lo -MD -MP -MF $depbase.Tpo -c -o row.lo ../../libpqxx/src/row.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT row.lo -MD -MP -MF .deps/row.Tpo -c ../../libpqxx/src/row.cxx -o row.o
+depbase=`echo util.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT util.lo -MD -MP -MF $depbase.Tpo -c -o util.lo ../../libpqxx/src/util.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT util.lo -MD -MP -MF .deps/util.Tpo -c ../../libpqxx/src/util.cxx -o util.o
+depbase=`echo version.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT version.lo -MD -MP -MF $depbase.Tpo -c -o version.lo ../../libpqxx/src/version.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT version.lo -MD -MP -MF .deps/version.Tpo -c ../../libpqxx/src/version.cxx -o version.o
+depbase=`echo wait.lo | sed 's|[^/]*$|.deps/&|;s|\.lo$||'`;\
+/bin/sh ../libtool  --tag=CXX   --mode=compile g++ -DHAVE_CONFIG_H   -I../../libpqxx/include -I../include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT wait.lo -MD -MP -MF $depbase.Tpo -c -o wait.lo ../../libpqxx/src/wait.cxx &&\
+mv -f $depbase.Tpo $depbase.Plo
+libtool: compile:  g++ -DHAVE_CONFIG_H -I../../libpqxx/include -I../include -I/usr/include -I/usr/include -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT wait.lo -MD -MP -MF .deps/wait.Tpo -c ../../libpqxx/src/wait.cxx -o wait.o
+/bin/sh ../libtool  --tag=CXX   --mode=link g++  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -release 7.9 -rpath /home/zjr/libpqxx/libpqxx_install_dir/lib  -L/usr/lib64 -o libpqxx.la -rpath /home/zjr/libpqxx/libpqxx_install_dir/lib array.lo binarystring.lo blob.lo connection.lo cursor.lo encodings.lo errorhandler.lo except.lo field.lo largeobject.lo notification.lo params.lo pipeline.lo result.lo robusttransaction.lo sql_cursor.lo strconv.lo stream_from.lo stream_to.lo subtransaction.lo time.lo transaction.lo transaction_base.lo row.lo util.lo version.lo wait.lo  -lpq  
+libtool: link: ar cr .libs/libpqxx.a  array.o binarystring.o blob.o connection.o cursor.o encodings.o errorhandler.o except.o field.o largeobject.o notification.o params.o pipeline.o result.o robusttransaction.o sql_cursor.o strconv.o stream_from.o stream_to.o subtransaction.o time.o transaction.o transaction_base.o row.o util.o version.o wait.o
+libtool: link: ranlib .libs/libpqxx.a
+libtool: link: ( cd ".libs" && rm -f "libpqxx.la" && ln -s "../libpqxx.la" "libpqxx.la" )
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/src'
+Making all in test
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/test'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/test'
+Making all in tools
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/tools'
+depbase=`echo rmlo.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT rmlo.o -MD -MP -MF $depbase.Tpo -c -o rmlo.o ../../libpqxx/tools/rmlo.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+/bin/sh ../libtool  --tag=CXX   --mode=link g++  -O0 -fvisibility=hidden -fvisibility-inlines-hidden  -L/usr/lib64 -o rmlo rmlo.o ../src/libpqxx.la  -lpq  
+libtool: link: g++ -O0 -fvisibility=hidden -fvisibility-inlines-hidden -o rmlo rmlo.o  -L/usr/lib64 ../src/.libs/libpqxx.a -lpq
+depbase=`echo pqxxthreadsafety.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT pqxxthreadsafety.o -MD -MP -MF $depbase.Tpo -c -o pqxxthreadsafety.o ../../libpqxx/tools/pqxxthreadsafety.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+/bin/sh ../libtool  --tag=CXX   --mode=link g++  -O0 -fvisibility=hidden -fvisibility-inlines-hidden  -L/usr/lib64 -o pqxxthreadsafety pqxxthreadsafety.o ../src/libpqxx.la  -lpq  
+libtool: link: g++ -O0 -fvisibility=hidden -fvisibility-inlines-hidden -o pqxxthreadsafety pqxxthreadsafety.o  -L/usr/lib64 ../src/.libs/libpqxx.a -lpq
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/tools'
+Making all in config
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/config'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/config'
+Making all in doc
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/doc'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/doc'
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir'
+make[1]: Nothing to be done for 'all-am'.
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir'
+
+##make install
+[zjr@VM-24-5-centos libpqxx_build_dir]$ make install
+Making install in include
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/include'
+Making install in pqxx
+make[2]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/include/pqxx'
+make[3]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/include/pqxx'
+make[3]: Nothing to be done for 'install-exec-am'.
+make[3]: Nothing to be done for 'install-data-am'.
+make[3]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/include/pqxx'
+make[2]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/include/pqxx'
+make[2]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/include'
+make[3]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/include'
+make[3]: Nothing to be done for 'install-exec-am'.
+ /usr/bin/mkdir -p '/home/zjr/libpqxx/libpqxx_install_dir/include'
+ /usr/bin/mkdir -p '/home/zjr/libpqxx/libpqxx_install_dir/include/pqxx'
+ /usr/bin/install -c -m 644  ../../libpqxx/include/pqxx/pqxx ../../libpqxx/include/pqxx/array ../../libpqxx/include/pqxx/array.hxx ../../libpqxx/include/pqxx/binarystring ../../libpqxx/include/pqxx/binarystring.hxx ../../libpqxx/include/pqxx/blob ../../libpqxx/include/pqxx/blob.hxx ../../libpqxx/include/pqxx/composite ../../libpqxx/include/pqxx/composite.hxx ../../libpqxx/include/pqxx/connection ../../libpqxx/include/pqxx/connection.hxx ../../libpqxx/include/pqxx/cursor ../../libpqxx/include/pqxx/cursor.hxx ../../libpqxx/include/pqxx/dbtransaction ../../libpqxx/include/pqxx/dbtransaction.hxx ../../libpqxx/include/pqxx/errorhandler ../../libpqxx/include/pqxx/errorhandler.hxx ../../libpqxx/include/pqxx/except ../../libpqxx/include/pqxx/except.hxx ../../libpqxx/include/pqxx/field ../../libpqxx/include/pqxx/field.hxx ../../libpqxx/include/pqxx/isolation ../../libpqxx/include/pqxx/isolation.hxx ../../libpqxx/include/pqxx/largeobject ../../libpqxx/include/pqxx/largeobject.hxx ../../libpqxx/include/pqxx/nontransaction ../../libpqxx/include/pqxx/nontransaction.hxx ../../libpqxx/include/pqxx/notification ../../libpqxx/include/pqxx/notification.hxx ../../libpqxx/include/pqxx/params ../../libpqxx/include/pqxx/params.hxx ../../libpqxx/include/pqxx/pipeline ../../libpqxx/include/pqxx/pipeline.hxx ../../libpqxx/include/pqxx/prepared_statement ../../libpqxx/include/pqxx/prepared_statement.hxx ../../libpqxx/include/pqxx/range ../../libpqxx/include/pqxx/range.hxx ../../libpqxx/include/pqxx/result ../../libpqxx/include/pqxx/result.hxx ../../libpqxx/include/pqxx/robusttransaction '/home/zjr/libpqxx/libpqxx_install_dir/include/pqxx'
+ /usr/bin/mkdir -p '/home/zjr/libpqxx/libpqxx_install_dir/include/pqxx/internal'
+ /usr/bin/install -c -m 644  ../../libpqxx/include/pqxx/internal/array-composite.hxx ../../libpqxx/include/pqxx/internal/callgate.hxx ../../libpqxx/include/pqxx/internal/concat.hxx ../../libpqxx/include/pqxx/internal/conversions.hxx ../../libpqxx/include/pqxx/internal/encoding_group.hxx ../../libpqxx/include/pqxx/internal/encodings.hxx ../../libpqxx/include/pqxx/internal/header-pre.hxx ../../libpqxx/include/pqxx/internal/header-post.hxx ../../libpqxx/include/pqxx/internal/ignore-deprecated-post.hxx ../../libpqxx/include/pqxx/internal/ignore-deprecated-pre.hxx ../../libpqxx/include/pqxx/internal/libpq-forward.hxx ../../libpqxx/include/pqxx/internal/result_iter.hxx ../../libpqxx/include/pqxx/internal/result_iterator.hxx ../../libpqxx/include/pqxx/internal/sql_cursor.hxx ../../libpqxx/include/pqxx/internal/statement_parameters.hxx ../../libpqxx/include/pqxx/internal/stream_iterator.hxx ../../libpqxx/include/pqxx/internal/stream_query.hxx ../../libpqxx/include/pqxx/internal/stream_query_impl.hxx ../../libpqxx/include/pqxx/internal/wait.hxx '/home/zjr/libpqxx/libpqxx_install_dir/include/pqxx/internal'
+ /usr/bin/mkdir -p '/home/zjr/libpqxx/libpqxx_install_dir/include/pqxx'
+ /usr/bin/install -c -m 644  ../../libpqxx/include/pqxx/robusttransaction.hxx ../../libpqxx/include/pqxx/separated_list ../../libpqxx/include/pqxx/separated_list.hxx ../../libpqxx/include/pqxx/strconv ../../libpqxx/include/pqxx/strconv.hxx ../../libpqxx/include/pqxx/stream_from ../../libpqxx/include/pqxx/stream_from.hxx ../../libpqxx/include/pqxx/stream_to ../../libpqxx/include/pqxx/stream_to.hxx ../../libpqxx/include/pqxx/subtransaction ../../libpqxx/include/pqxx/subtransaction.hxx ../../libpqxx/include/pqxx/time ../../libpqxx/include/pqxx/time.hxx ../../libpqxx/include/pqxx/transaction ../../libpqxx/include/pqxx/transaction.hxx ../../libpqxx/include/pqxx/transaction_base ../../libpqxx/include/pqxx/transaction_base.hxx ../../libpqxx/include/pqxx/transaction_focus ../../libpqxx/include/pqxx/transaction_focus.hxx ../../libpqxx/include/pqxx/transactor ../../libpqxx/include/pqxx/transactor.hxx ../../libpqxx/include/pqxx/row ../../libpqxx/include/pqxx/row.hxx ../../libpqxx/include/pqxx/util ../../libpqxx/include/pqxx/util.hxx ../../libpqxx/include/pqxx/types ../../libpqxx/include/pqxx/types.hxx ../../libpqxx/include/pqxx/zview ../../libpqxx/include/pqxx/zview.hxx ../../libpqxx/include/pqxx/version ../../libpqxx/include/pqxx/version.hxx '/home/zjr/libpqxx/libpqxx_install_dir/include/pqxx'
+ /usr/bin/mkdir -p '/home/zjr/libpqxx/libpqxx_install_dir/include/pqxx/internal/gates'
+ /usr/bin/install -c -m 644  ../../libpqxx/include/pqxx/internal/gates/connection-errorhandler.hxx ../../libpqxx/include/pqxx/internal/gates/connection-largeobject.hxx ../../libpqxx/include/pqxx/internal/gates/connection-notification_receiver.hxx ../../libpqxx/include/pqxx/internal/gates/connection-pipeline.hxx ../../libpqxx/include/pqxx/internal/gates/connection-sql_cursor.hxx ../../libpqxx/include/pqxx/internal/gates/connection-stream_from.hxx ../../libpqxx/include/pqxx/internal/gates/connection-stream_to.hxx ../../libpqxx/include/pqxx/internal/gates/connection-transaction.hxx ../../libpqxx/include/pqxx/internal/gates/errorhandler-connection.hxx ../../libpqxx/include/pqxx/internal/gates/icursor_iterator-icursorstream.hxx ../../libpqxx/include/pqxx/internal/gates/icursorstream-icursor_iterator.hxx ../../libpqxx/include/pqxx/internal/gates/result-connection.hxx ../../libpqxx/include/pqxx/internal/gates/result-creation.hxx ../../libpqxx/include/pqxx/internal/gates/result-pipeline.hxx ../../libpqxx/include/pqxx/internal/gates/result-sql_cursor.hxx ../../libpqxx/include/pqxx/internal/gates/transaction-sql_cursor.hxx ../../libpqxx/include/pqxx/internal/gates/transaction-transaction_focus.hxx '/home/zjr/libpqxx/libpqxx_install_dir/include/pqxx/internal/gates'
+ /usr/bin/mkdir -p '/home/zjr/libpqxx/libpqxx_install_dir/include'
+ /usr/bin/mkdir -p '/home/zjr/libpqxx/libpqxx_install_dir/include/pqxx'
+ /usr/bin/install -c -m 644  pqxx/config-public-compiler.h '/home/zjr/libpqxx/libpqxx_install_dir/include/pqxx'
+make[3]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/include'
+make[2]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/include'
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/include'
+Making install in src
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/src'
+make[2]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/src'
+ /usr/bin/mkdir -p '/home/zjr/libpqxx/libpqxx_install_dir/lib'
+ /bin/sh ../libtool   --mode=install /usr/bin/install -c   libpqxx.la '/home/zjr/libpqxx/libpqxx_install_dir/lib'
+libtool: install: /usr/bin/install -c .libs/libpqxx.lai /home/zjr/libpqxx/libpqxx_install_dir/lib/libpqxx.la
+libtool: install: /usr/bin/install -c .libs/libpqxx.a /home/zjr/libpqxx/libpqxx_install_dir/lib/libpqxx.a
+libtool: install: chmod 644 /home/zjr/libpqxx/libpqxx_install_dir/lib/libpqxx.a
+libtool: install: ranlib /home/zjr/libpqxx/libpqxx_install_dir/lib/libpqxx.a
+libtool: finish: PATH="/opt/rh/gcc-toolset-14/root/usr/bin:/home/zjr/.local/bin:/home/zjr/bin:/usr/share/Modules/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin" ldconfig -n /home/zjr/libpqxx/libpqxx_install_dir/lib
+----------------------------------------------------------------------
+Libraries have been installed in:
+   /home/zjr/libpqxx/libpqxx_install_dir/lib
+
+If you ever happen to want to link against installed libraries
+in a given directory, LIBDIR, you must either use libtool, and
+specify the full pathname of the library, or use the '-LLIBDIR'
+flag during linking and do at least one of the following:
+   - add LIBDIR to the 'LD_LIBRARY_PATH' environment variable
+     during execution
+   - add LIBDIR to the 'LD_RUN_PATH' environment variable
+     during linking
+   - use the '-Wl,-rpath -Wl,LIBDIR' linker flag
+   - have your system administrator add LIBDIR to '/etc/ld.so.conf'
+
+See any operating system documentation about shared libraries for
+more information, such as the ld(1) and ld.so(8) manual pages.
+----------------------------------------------------------------------
+make[2]: Nothing to be done for 'install-data-am'.
+make[2]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/src'
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/src'
+Making install in test
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/test'
+make[2]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/test'
+make[2]: Nothing to be done for 'install-exec-am'.
+make[2]: Nothing to be done for 'install-data-am'.
+make[2]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/test'
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/test'
+Making install in tools
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/tools'
+make[2]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/tools'
+make[2]: Nothing to be done for 'install-exec-am'.
+make[2]: Nothing to be done for 'install-data-am'.
+make[2]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/tools'
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/tools'
+Making install in config
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/config'
+make[2]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/config'
+make[2]: Nothing to be done for 'install-exec-am'.
+make[2]: Nothing to be done for 'install-data-am'.
+make[2]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/config'
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/config'
+Making install in doc
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/doc'
+make[2]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/doc'
+make[2]: Nothing to be done for 'install-exec-am'.
+make[2]: Nothing to be done for 'install-data-am'.
+make[2]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/doc'
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/doc'
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir'
+make[2]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir'
+make[2]: Nothing to be done for 'install-exec-am'.
+ /usr/bin/mkdir -p '/home/zjr/libpqxx/libpqxx_install_dir/lib/pkgconfig'
+ /usr/bin/install -c -m 644 libpqxx.pc '/home/zjr/libpqxx/libpqxx_install_dir/lib/pkgconfig'
+make[2]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir'
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir'
+
+
+
+##
+#准备运行测试程
+[zjr@VM-24-5-centos libpqxx_build_dir]$ cd ..
+[zjr@VM-24-5-centos libpqxx]$ pwd
+/home/zjr/libpqxx
+[zjr@VM-24-5-centos libpqxx]$ ls
+libpqxx  libpqxx_build_dir  libpqxx_install_dir  tutorial
+[zjr@VM-24-5-centos libpqxx]$ pwd
+/home/zjr/libpqxx
+[zjr@VM-24-5-centos libpqxx]$ ls
+libpqxx  libpqxx_build_dir  libpqxx_install_dir  tutorial
+## 运行测试程序
+[zjr@VM-24-5-centos libpqxx]$ cd libpqxx_build_dir/
+[zjr@VM-24-5-centos libpqxx_build_dir]$ PGHOST=127.0.0.1 PGDATABASE=zjr20241017 PGUSER=zjr PGPASSWORD=123456 make check
+Making check in include
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/include'
+Making check in pqxx
+make[2]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/include/pqxx'
+make[2]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/include/pqxx'
+make[2]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/include'
+make[2]: Nothing to be done for 'check-am'.
+make[2]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/include'
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/include'
+Making check in src
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/src'
+make[1]: Nothing to be done for 'check'.
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/src'
+Making check in test
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/test'
+make  runner
+make[2]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/test'
+depbase=`echo test00.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test00.o -MD -MP -MF $depbase.Tpo -c -o test00.o ../../libpqxx/test/test00.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test01.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test01.o -MD -MP -MF $depbase.Tpo -c -o test01.o ../../libpqxx/test/test01.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test02.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test02.o -MD -MP -MF $depbase.Tpo -c -o test02.o ../../libpqxx/test/test02.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test04.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test04.o -MD -MP -MF $depbase.Tpo -c -o test04.o ../../libpqxx/test/test04.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test07.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test07.o -MD -MP -MF $depbase.Tpo -c -o test07.o ../../libpqxx/test/test07.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test10.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test10.o -MD -MP -MF $depbase.Tpo -c -o test10.o ../../libpqxx/test/test10.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test11.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test11.o -MD -MP -MF $depbase.Tpo -c -o test11.o ../../libpqxx/test/test11.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test13.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test13.o -MD -MP -MF $depbase.Tpo -c -o test13.o ../../libpqxx/test/test13.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test14.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test14.o -MD -MP -MF $depbase.Tpo -c -o test14.o ../../libpqxx/test/test14.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test16.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test16.o -MD -MP -MF $depbase.Tpo -c -o test16.o ../../libpqxx/test/test16.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test17.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test17.o -MD -MP -MF $depbase.Tpo -c -o test17.o ../../libpqxx/test/test17.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test18.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test18.o -MD -MP -MF $depbase.Tpo -c -o test18.o ../../libpqxx/test/test18.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test20.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test20.o -MD -MP -MF $depbase.Tpo -c -o test20.o ../../libpqxx/test/test20.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test21.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test21.o -MD -MP -MF $depbase.Tpo -c -o test21.o ../../libpqxx/test/test21.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test26.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test26.o -MD -MP -MF $depbase.Tpo -c -o test26.o ../../libpqxx/test/test26.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test29.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test29.o -MD -MP -MF $depbase.Tpo -c -o test29.o ../../libpqxx/test/test29.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test30.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test30.o -MD -MP -MF $depbase.Tpo -c -o test30.o ../../libpqxx/test/test30.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test32.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test32.o -MD -MP -MF $depbase.Tpo -c -o test32.o ../../libpqxx/test/test32.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test37.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test37.o -MD -MP -MF $depbase.Tpo -c -o test37.o ../../libpqxx/test/test37.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test39.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test39.o -MD -MP -MF $depbase.Tpo -c -o test39.o ../../libpqxx/test/test39.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test46.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test46.o -MD -MP -MF $depbase.Tpo -c -o test46.o ../../libpqxx/test/test46.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test56.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test56.o -MD -MP -MF $depbase.Tpo -c -o test56.o ../../libpqxx/test/test56.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test60.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test60.o -MD -MP -MF $depbase.Tpo -c -o test60.o ../../libpqxx/test/test60.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test61.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test61.o -MD -MP -MF $depbase.Tpo -c -o test61.o ../../libpqxx/test/test61.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test62.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test62.o -MD -MP -MF $depbase.Tpo -c -o test62.o ../../libpqxx/test/test62.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test69.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test69.o -MD -MP -MF $depbase.Tpo -c -o test69.o ../../libpqxx/test/test69.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test70.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test70.o -MD -MP -MF $depbase.Tpo -c -o test70.o ../../libpqxx/test/test70.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test71.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test71.o -MD -MP -MF $depbase.Tpo -c -o test71.o ../../libpqxx/test/test71.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test72.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test72.o -MD -MP -MF $depbase.Tpo -c -o test72.o ../../libpqxx/test/test72.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test74.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test74.o -MD -MP -MF $depbase.Tpo -c -o test74.o ../../libpqxx/test/test74.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test75.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test75.o -MD -MP -MF $depbase.Tpo -c -o test75.o ../../libpqxx/test/test75.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test76.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test76.o -MD -MP -MF $depbase.Tpo -c -o test76.o ../../libpqxx/test/test76.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test77.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test77.o -MD -MP -MF $depbase.Tpo -c -o test77.o ../../libpqxx/test/test77.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test78.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test78.o -MD -MP -MF $depbase.Tpo -c -o test78.o ../../libpqxx/test/test78.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test79.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test79.o -MD -MP -MF $depbase.Tpo -c -o test79.o ../../libpqxx/test/test79.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test82.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test82.o -MD -MP -MF $depbase.Tpo -c -o test82.o ../../libpqxx/test/test82.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test84.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test84.o -MD -MP -MF $depbase.Tpo -c -o test84.o ../../libpqxx/test/test84.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test87.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test87.o -MD -MP -MF $depbase.Tpo -c -o test87.o ../../libpqxx/test/test87.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test88.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test88.o -MD -MP -MF $depbase.Tpo -c -o test88.o ../../libpqxx/test/test88.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test89.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test89.o -MD -MP -MF $depbase.Tpo -c -o test89.o ../../libpqxx/test/test89.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo test90.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT test90.o -MD -MP -MF $depbase.Tpo -c -o test90.o ../../libpqxx/test/test90.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_array.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_array.o -MD -MP -MF $depbase.Tpo -c -o unit/test_array.o ../../libpqxx/test/unit/test_array.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_binarystring.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_binarystring.o -MD -MP -MF $depbase.Tpo -c -o unit/test_binarystring.o ../../libpqxx/test/unit/test_binarystring.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_blob.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_blob.o -MD -MP -MF $depbase.Tpo -c -o unit/test_blob.o ../../libpqxx/test/unit/test_blob.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_cancel_query.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_cancel_query.o -MD -MP -MF $depbase.Tpo -c -o unit/test_cancel_query.o ../../libpqxx/test/unit/test_cancel_query.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_column.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_column.o -MD -MP -MF $depbase.Tpo -c -o unit/test_column.o ../../libpqxx/test/unit/test_column.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_composite.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_composite.o -MD -MP -MF $depbase.Tpo -c -o unit/test_composite.o ../../libpqxx/test/unit/test_composite.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_connection.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_connection.o -MD -MP -MF $depbase.Tpo -c -o unit/test_connection.o ../../libpqxx/test/unit/test_connection.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_cursor.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_cursor.o -MD -MP -MF $depbase.Tpo -c -o unit/test_cursor.o ../../libpqxx/test/unit/test_cursor.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_encodings.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_encodings.o -MD -MP -MF $depbase.Tpo -c -o unit/test_encodings.o ../../libpqxx/test/unit/test_encodings.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_error_verbosity.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_error_verbosity.o -MD -MP -MF $depbase.Tpo -c -o unit/test_error_verbosity.o ../../libpqxx/test/unit/test_error_verbosity.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_errorhandler.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_errorhandler.o -MD -MP -MF $depbase.Tpo -c -o unit/test_errorhandler.o ../../libpqxx/test/unit/test_errorhandler.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_escape.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_escape.o -MD -MP -MF $depbase.Tpo -c -o unit/test_escape.o ../../libpqxx/test/unit/test_escape.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_exceptions.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_exceptions.o -MD -MP -MF $depbase.Tpo -c -o unit/test_exceptions.o ../../libpqxx/test/unit/test_exceptions.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_field.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_field.o -MD -MP -MF $depbase.Tpo -c -o unit/test_field.o ../../libpqxx/test/unit/test_field.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_float.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_float.o -MD -MP -MF $depbase.Tpo -c -o unit/test_float.o ../../libpqxx/test/unit/test_float.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_largeobject.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_largeobject.o -MD -MP -MF $depbase.Tpo -c -o unit/test_largeobject.o ../../libpqxx/test/unit/test_largeobject.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_nonblocking_connect.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_nonblocking_connect.o -MD -MP -MF $depbase.Tpo -c -o unit/test_nonblocking_connect.o ../../libpqxx/test/unit/test_nonblocking_connect.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_notification.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_notification.o -MD -MP -MF $depbase.Tpo -c -o unit/test_notification.o ../../libpqxx/test/unit/test_notification.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_pipeline.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_pipeline.o -MD -MP -MF $depbase.Tpo -c -o unit/test_pipeline.o ../../libpqxx/test/unit/test_pipeline.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_prepared_statement.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_prepared_statement.o -MD -MP -MF $depbase.Tpo -c -o unit/test_prepared_statement.o ../../libpqxx/test/unit/test_prepared_statement.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_range.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_range.o -MD -MP -MF $depbase.Tpo -c -o unit/test_range.o ../../libpqxx/test/unit/test_range.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_read_transaction.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_read_transaction.o -MD -MP -MF $depbase.Tpo -c -o unit/test_read_transaction.o ../../libpqxx/test/unit/test_read_transaction.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_result_iteration.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_result_iteration.o -MD -MP -MF $depbase.Tpo -c -o unit/test_result_iteration.o ../../libpqxx/test/unit/test_result_iteration.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_result_slicing.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_result_slicing.o -MD -MP -MF $depbase.Tpo -c -o unit/test_result_slicing.o ../../libpqxx/test/unit/test_result_slicing.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_row.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_row.o -MD -MP -MF $depbase.Tpo -c -o unit/test_row.o ../../libpqxx/test/unit/test_row.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_separated_list.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_separated_list.o -MD -MP -MF $depbase.Tpo -c -o unit/test_separated_list.o ../../libpqxx/test/unit/test_separated_list.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_simultaneous_transactions.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_simultaneous_transactions.o -MD -MP -MF $depbase.Tpo -c -o unit/test_simultaneous_transactions.o ../../libpqxx/test/unit/test_simultaneous_transactions.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_sql_cursor.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_sql_cursor.o -MD -MP -MF $depbase.Tpo -c -o unit/test_sql_cursor.o ../../libpqxx/test/unit/test_sql_cursor.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_stateless_cursor.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_stateless_cursor.o -MD -MP -MF $depbase.Tpo -c -o unit/test_stateless_cursor.o ../../libpqxx/test/unit/test_stateless_cursor.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_strconv.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_strconv.o -MD -MP -MF $depbase.Tpo -c -o unit/test_strconv.o ../../libpqxx/test/unit/test_strconv.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_stream_from.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_stream_from.o -MD -MP -MF $depbase.Tpo -c -o unit/test_stream_from.o ../../libpqxx/test/unit/test_stream_from.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_stream_query.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_stream_query.o -MD -MP -MF $depbase.Tpo -c -o unit/test_stream_query.o ../../libpqxx/test/unit/test_stream_query.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_stream_to.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_stream_to.o -MD -MP -MF $depbase.Tpo -c -o unit/test_stream_to.o ../../libpqxx/test/unit/test_stream_to.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_string_conversion.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_string_conversion.o -MD -MP -MF $depbase.Tpo -c -o unit/test_string_conversion.o ../../libpqxx/test/unit/test_string_conversion.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_subtransaction.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_subtransaction.o -MD -MP -MF $depbase.Tpo -c -o unit/test_subtransaction.o ../../libpqxx/test/unit/test_subtransaction.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_test_helpers.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_test_helpers.o -MD -MP -MF $depbase.Tpo -c -o unit/test_test_helpers.o ../../libpqxx/test/unit/test_test_helpers.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_thread_safety_model.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_thread_safety_model.o -MD -MP -MF $depbase.Tpo -c -o unit/test_thread_safety_model.o ../../libpqxx/test/unit/test_thread_safety_model.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_time.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_time.o -MD -MP -MF $depbase.Tpo -c -o unit/test_time.o ../../libpqxx/test/unit/test_time.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_transaction.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_transaction.o -MD -MP -MF $depbase.Tpo -c -o unit/test_transaction.o ../../libpqxx/test/unit/test_transaction.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_transaction_base.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_transaction_base.o -MD -MP -MF $depbase.Tpo -c -o unit/test_transaction_base.o ../../libpqxx/test/unit/test_transaction_base.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_transaction_focus.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_transaction_focus.o -MD -MP -MF $depbase.Tpo -c -o unit/test_transaction_focus.o ../../libpqxx/test/unit/test_transaction_focus.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_transactor.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_transactor.o -MD -MP -MF $depbase.Tpo -c -o unit/test_transactor.o ../../libpqxx/test/unit/test_transactor.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_type_name.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_type_name.o -MD -MP -MF $depbase.Tpo -c -o unit/test_type_name.o ../../libpqxx/test/unit/test_type_name.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo unit/test_zview.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT unit/test_zview.o -MD -MP -MF $depbase.Tpo -c -o unit/test_zview.o ../../libpqxx/test/unit/test_zview.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo runner.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H   -I../include -I../../libpqxx/include -I/usr/include  -O0 -fvisibility=hidden -fvisibility-inlines-hidden -MT runner.o -MD -MP -MF $depbase.Tpo -c -o runner.o ../../libpqxx/test/runner.cxx &&\
+mv -f $depbase.Tpo $depbase.Po
+/bin/sh ../libtool  --tag=CXX   --mode=link g++  -O0 -fvisibility=hidden -fvisibility-inlines-hidden  -L/usr/lib64 -o runner test00.o test01.o test02.o test04.o test07.o test10.o test11.o test13.o test14.o test16.o test17.o test18.o test20.o test21.o test26.o test29.o test30.o test32.o test37.o test39.o test46.o test56.o test60.o test61.o test62.o test69.o test70.o test71.o test72.o test74.o test75.o test76.o test77.o test78.o test79.o test82.o test84.o test87.o test88.o test89.o test90.o unit/test_array.o unit/test_binarystring.o unit/test_blob.o unit/test_cancel_query.o unit/test_column.o unit/test_composite.o unit/test_connection.o unit/test_cursor.o unit/test_encodings.o unit/test_error_verbosity.o unit/test_errorhandler.o unit/test_escape.o unit/test_exceptions.o unit/test_field.o unit/test_float.o unit/test_largeobject.o unit/test_nonblocking_connect.o unit/test_notification.o unit/test_pipeline.o unit/test_prepared_statement.o unit/test_range.o unit/test_read_transaction.o unit/test_result_iteration.o unit/test_result_slicing.o unit/test_row.o unit/test_separated_list.o unit/test_simultaneous_transactions.o unit/test_sql_cursor.o unit/test_stateless_cursor.o unit/test_strconv.o unit/test_stream_from.o unit/test_stream_query.o unit/test_stream_to.o unit/test_string_conversion.o unit/test_subtransaction.o unit/test_test_helpers.o unit/test_thread_safety_model.o unit/test_time.o unit/test_transaction.o unit/test_transaction_base.o unit/test_transaction_focus.o unit/test_transactor.o unit/test_type_name.o unit/test_zview.o runner.o ../src/libpqxx.la  -lpq  
+libtool: link: g++ -O0 -fvisibility=hidden -fvisibility-inlines-hidden -o runner test00.o test01.o test02.o test04.o test07.o test10.o test11.o test13.o test14.o test16.o test17.o test18.o test20.o test21.o test26.o test29.o test30.o test32.o test37.o test39.o test46.o test56.o test60.o test61.o test62.o test69.o test70.o test71.o test72.o test74.o test75.o test76.o test77.o test78.o test79.o test82.o test84.o test87.o test88.o test89.o test90.o unit/test_array.o unit/test_binarystring.o unit/test_blob.o unit/test_cancel_query.o unit/test_column.o unit/test_composite.o unit/test_connection.o unit/test_cursor.o unit/test_encodings.o unit/test_error_verbosity.o unit/test_errorhandler.o unit/test_escape.o unit/test_exceptions.o unit/test_field.o unit/test_float.o unit/test_largeobject.o unit/test_nonblocking_connect.o unit/test_notification.o unit/test_pipeline.o unit/test_prepared_statement.o unit/test_range.o unit/test_read_transaction.o unit/test_result_iteration.o unit/test_result_slicing.o unit/test_row.o unit/test_separated_list.o unit/test_simultaneous_transactions.o unit/test_sql_cursor.o unit/test_stateless_cursor.o unit/test_strconv.o unit/test_stream_from.o unit/test_stream_query.o unit/test_stream_to.o unit/test_string_conversion.o unit/test_subtransaction.o unit/test_test_helpers.o unit/test_thread_safety_model.o unit/test_time.o unit/test_transaction.o unit/test_transaction_base.o unit/test_transaction_focus.o unit/test_transactor.o unit/test_type_name.o unit/test_zview.o runner.o  -L/usr/lib64 ../src/.libs/libpqxx.a -lpq
+make[2]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/test'
+make  check-TESTS
+make[2]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/test'
+
+Running: cursor_tests
+
+Running: test_000
+
+Running: test_001
+
+Running: test_002
+
+Running: test_004
+
+Running: test_007
+
+Running: test_011
+
+Running: test_013
+
+Running: test_014
+
+Running: test_016
+
+Running: test_017
+
+Running: test_018
+
+Running: test_020
+
+Running: test_021
+
+Running: test_026
+
+Running: test_029
+
+Running: test_030
+
+Running: test_032
+
+Running: test_037
+
+Running: test_039
+
+Running: test_046
+
+Running: test_056
+
+Running: test_060
+
+Running: test_061
+
+Running: test_062
+
+Running: test_069
+
+Running: test_070
+
+Running: test_071
+
+Running: test_072
+
+Running: test_074
+
+Running: test_075
+
+Running: test_076
+
+Running: test_077
+
+Running: test_078
+.Received notification: my listener pid=3909990
+
+
+Running: test_079
+.Received notification: mylistener pid=3909991
+
+
+Running: test_082
+
+Running: test_084
+
+Running: test_087
+.Received notification: my notification pid=3910000
+
+
+Running: test_088
+tx0 starts
+tx0 ends
+tx1 starts
+  a
+  b
+  c
+tx1 ends
+        1       tx2
+        2       tx2a
+        4       tx2c
+
+Running: test_089
+
+Running: test_090
+
+Running: test_abort
+
+Running: test_array_at_checks_bounds
+
+Running: test_array_double_double_quoted_string
+
+Running: test_array_double_quoted_escaping
+
+Running: test_array_double_quoted_string
+
+Running: test_array_generate
+
+Running: test_array_generate_empty_strings
+
+Running: test_array_iterates_in_row_major_order
+
+Running: test_array_multiple_values
+
+Running: test_array_null_value
+
+Running: test_array_parses_multidim_arrays
+
+Running: test_array_parses_quoted_strings
+
+Running: test_array_parses_real_arrays
+
+Running: test_array_rejects_malformed_simple_int_arrays
+
+Running: test_array_rejects_malformed_simple_string_arrays
+
+Running: test_array_rejects_malformed_twodimensional_arrays
+
+Running: test_array_roundtrip
+
+Running: test_array_strings
+
+Running: test_array_unquoted_string
+
+Running: test_as_sql_array
+
+Running: test_bad_float
+
+Running: test_binary_esc_checks_buffer_length
+
+Running: test_binarystring
+
+Running: test_binarystring_array_stream
+
+Running: test_binarystring_conversion
+
+Running: test_binarystring_stream
+
+Running: test_blob_accepts_std_filesystem_path
+
+Running: test_blob_append_from_buf_appends
+
+Running: test_blob_append_to_buf_appends
+
+Running: test_blob_checks_open_mode
+
+Running: test_blob_close_leaves_blob_unusable
+
+Running: test_blob_create_makes_empty_blob
+
+Running: test_blob_create_with_oid_obeys_oid
+
+Running: test_blob_create_with_oid_requires_oid_be_free
+
+Running: test_blob_from_buf_interoperates_with_to_buf
+
+Running: test_blob_from_file_creates_blob_from_file_contents
+
+Running: test_blob_from_file_with_oid_writes_blob
+
+Running: test_blob_is_useless_by_default
+
+Running: test_blob_read_reads_data
+
+Running: test_blob_read_span
+
+Running: test_blob_reads_vector
+
+Running: test_blob_remove_is_not_idempotent
+
+Running: test_blob_remove_removes_blob
+
+Running: test_blob_resize_extends_to_desired_length
+
+Running: test_blob_resize_shortens_to_desired_length
+
+Running: test_blob_seek_sets_positions
+
+Running: test_blob_supports_move
+
+Running: test_blob_tell_tracks_position
+
+Running: test_blob_to_file_writes_file
+
+Running: test_blob_write_appends_at_insertion_point
+
+Running: test_blob_writes_span
+
+Running: test_blobs_are_transactional
+
+Running: test_bug_262
+
+Running: test_cancel_query
+
+Running: test_cannot_run_params_statement_during_focus
+
+Running: test_cannot_run_prepared_statement_during_focus
+
+Running: test_cannot_run_statement_during_focus
+
+Running: test_closed_connection
+
+Running: test_composite
+
+Running: test_composite_escapes
+
+Running: test_composite_handles_nulls
+
+Running: test_composite_renders_to_string
+
+Running: test_connection_params
+
+Running: test_connection_string
+
+Running: test_connection_string_constructor
+
+Running: test_container_stream_to
+
+Running: test_convert_null
+
+Running: test_convert_variant_to_string
+
+Running: test_cursor
+
+Running: test_empty_arrays
+
+Running: test_encodings
+
+Running: test_encrypt_password
+
+Running: test_error_verbosity
+
+Running: test_errorhandler
+
+Running: test_esc_accepts_various_types
+
+Running: test_esc_escapes_into_buffer
+
+Running: test_escaping
+
+Running: test_exceptions
+
+Running: test_field
+
+Running: test_float_range_contains
+
+Running: test_for_query_prepped
+
+Running: test_infinities
+
+Running: test_integer_conversion
+
+Running: test_long_float
+
+Running: test_move_assign
+
+Running: test_move_constructor
+
+Running: test_nested_array
+
+Running: test_nested_array_with_multiple_entries
+
+Running: test_nonblocking_connect
+
+Running: test_notification
+
+Running: test_parse_bad_range
+
+Running: test_parse_range
+
+Running: test_pipeline
+
+Running: test_placeholders_generates_names
+
+Running: test_prepared_statements
+
+Running: test_query_prepped
+
+Running: test_query_value_prepped
+
+Running: test_range_construct
+
+Running: test_range_contains
+
+Running: test_range_conversion
+
+Running: test_range_empty
+
+Running: test_range_equality
+
+Running: test_range_intersection
+
+Running: test_range_is_constexpr
+
+Running: test_range_subset
+
+Running: test_range_to_string
+
+Running: test_raw_connection
+
+Running: test_read_transaction
+
+Running: test_result_for_each
+
+Running: test_result_iter
+
+Running: test_result_iteration
+
+Running: test_result_iterator_assignment
+
+Running: test_result_iterator_swap
+
+Running: test_result_slicing
+
+Running: test_row
+
+Running: test_row_as
+
+Running: test_row_iterator
+
+Running: test_row_iterator_array_index_offsets_iterator
+
+Running: test_separated_list
+
+Running: test_simultaneous_transactions
+
+Running: test_skip_init_ssl
+
+Running: test_stateless_cursor
+
+Running: test_strconv_bool
+
+Running: test_strconv_class_enum
+
+Running: test_strconv_enum
+
+Running: test_strconv_optional
+
+Running: test_strconv_smart_pointer
+
+Running: test_stream_does_escaping
+
+Running: test_stream_from
+(Expected) Could not stream nulls into null-less fields: Attempt to convert SQL null to std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >.
+(Expected) Could not extract row: Streaming non-null value into null field.
+(Expected) Tuple is wrong size: Tried to extract 1 field(s) from a stream of 6.
+(Expected) Could not extract row: Tried to extract 7 field(s) from a stream of 6.
+testing `std::unique_ptr` as optional...
+testing `std::optional` as optional...
+
+Running: test_stream_from_does_escaping
+
+Running: test_stream_from_does_iteration
+
+Running: test_stream_from_parses_awkward_strings
+
+Running: test_stream_from_read_row
+
+Running: test_stream_handles_empty
+
+Running: test_stream_handles_empty_string
+
+Running: test_stream_handles_nulls_in_all_places
+
+Running: test_stream_iterates
+
+Running: test_stream_large_object
+
+Running: test_stream_parses_awkward_strings
+
+Running: test_stream_reads_nulls_as_optionals
+
+Running: test_stream_reads_simple_values
+
+Running: test_stream_reads_string_view
+
+Running: test_stream_to
+(Expected) Could not insert row: Failure during '[END COPY]': ERROR:  missing data for column ...
+(Expected) Fold - Could not insert row: Failure during '[END COPY]': ERROR:  missing data for column ...
+(Expected) Could not insert row: Failure during '[END COPY]': ERROR:  extra data after last ex...
+(Expected) Fold - Could not insert row: Failure during '[END COPY]': ERROR:  extra data after last ex...
+
+Running: test_stream_to_does_nonnull_optional
+
+Running: test_stream_to_empty_strings
+
+Running: test_stream_to_escaping
+
+Running: test_stream_to_factory_with_dynamic_columns
+
+Running: test_stream_to_factory_with_static_columns
+
+Running: test_stream_to_moves_into_optional
+
+Running: test_stream_to_optionals
+
+Running: test_stream_to_quotes_arguments
+
+Running: test_string_conversion
+
+Running: test_string_view_conversion
+
+Running: test_subtransaction
+
+Running: test_table_column
+
+Running: test_test_helpers
+
+Running: test_thread_safety_model
+
+Running: test_transaction
+
+Running: test_transaction_base
+
+Running: test_transaction_for_query
+
+Running: test_transaction_for_stream
+
+Running: test_transaction_query
+
+Running: test_transaction_query01
+
+Running: test_transaction_query1
+
+Running: test_transaction_query_n
+
+Running: test_transaction_query_params
+
+Running: test_transactor
+
+Running: test_type_name
+
+Running: test_wrong_number_of_params
+
+Running: test_zview_converts_to_string
+
+Running: test_zview_literal
+Ran 212 test(s).
+PASS: runner
+=============
+1 test passed
+=============
+make[2]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/test'
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/test'
+Making check in tools
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/tools'
+make[1]: Nothing to be done for 'check'.
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/tools'
+Making check in config
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/config'
+make[1]: Nothing to be done for 'check'.
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/config'
+Making check in doc
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/doc'
+make[1]: Nothing to be done for 'check'.
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/doc'
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir'
+make  check-TESTS
+make[2]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir'
+make[3]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir'
+FAIL: tools/lint
+============================================================================
+Testsuite summary for libpqxx 7.9.3
+============================================================================
+# TOTAL: 1
+# PASS:  0
+# SKIP:  0
+# XFAIL: 0
+# FAIL:  1
+# XPASS: 0
+# ERROR: 0
+============================================================================
+See ./test-suite.log
+Please report to Jeroen T. Vermeulen
+============================================================================
+make[3]: *** [Makefile:757: test-suite.log] Error 1
+make[3]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir'
+make[2]: *** [Makefile:865: check-TESTS] Error 2
+make[2]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir'
+make[1]: *** [Makefile:1104: check-am] Error 2
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir'
+make: *** [Makefile:642: check-recursive] Error 1
+[zjr@VM-24-5-centos libpqxx_build_dir]$ ^C
+[zjr@VM-24-5-centos libpqxx_build_dir]$
+
+##报错信息
+#*******************************
+## TOTAL: 1
+# PASS:  0
+# SKIP:  0
+# XFAIL: 0
+# FAIL:  1
+# XPASS: 0
+# ERROR: 0
+
+.. contents:: :depth: 2
+
+FAIL: tools/lint
+================
+
+../libpqxx/tools/lint: line 24: virtualenv: command not found
+FAIL tools/lint (exit status: 127)
+#**************************************
+##修改测试脚本中的python虚拟环境建立的报错问题
+ 17 set_up() {
+ 18     MY_VENV="$(mktemp -d)"
+ 19     if [ -z "$MY_VENV" ]
+ 20     then
+ 21         echo "Failed to set up virtualenv." >&2
+ 22         exit 2
+ 23     fi
+ 24     #virtualenv -q "$MY_VENV"
+ 25     python -m venv  "$MY_VENV"
+ 26 
+ 27     # shellcheck disable=SC1091
+ 28     . "$MY_VENV/bin/activate"
+ 29     pip install -q pyflakes ruff shellcheck-py
+ 30 }
+
+ ###
+ #重新运行测试命令,运行通过
+ #[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ 
+[zjr@VM-24-5-centos libpqxx_build_dir]$ PGHOST=127.0.0.1 PGDATABASE=zjr20241017 PGUSER=zjr PGPASSWORD=123456 make check
+Making check in include
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/include'
+Making check in pqxx
+make[2]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/include/pqxx'
+make[2]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/include/pqxx'
+make[2]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/include'
+make[2]: Nothing to be done for 'check-am'.
+make[2]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/include'
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/include'
+Making check in src
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/src'
+make[1]: Nothing to be done for 'check'.
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/src'
+Making check in test
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/test'
+make  runner
+make[2]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/test'
+make[2]: 'runner' is up to date.
+make[2]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/test'
+make  check-TESTS
+make[2]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/test'
+
+Running: cursor_tests
+
+Running: test_000
+
+Running: test_001
+
+Running: test_002
+
+Running: test_004
+
+Running: test_007
+
+Running: test_011
+
+Running: test_013
+
+Running: test_014
+
+Running: test_016
+
+Running: test_017
+
+Running: test_018
+
+Running: test_020
+
+Running: test_021
+
+Running: test_026
+
+Running: test_029
+
+Running: test_030
+
+Running: test_032
+
+Running: test_037
+
+Running: test_039
+
+Running: test_046
+
+Running: test_056
+
+Running: test_060
+
+Running: test_061
+
+Running: test_062
+
+Running: test_069
+
+Running: test_070
+
+Running: test_071
+
+Running: test_072
+
+Running: test_074
+
+Running: test_075
+
+Running: test_076
+
+Running: test_077
+
+Running: test_078
+.Received notification: my listener pid=3939914
+
+
+Running: test_079
+.Received notification: mylistener pid=3939915
+
+
+Running: test_082
+
+Running: test_084
+
+Running: test_087
+.Received notification: my notification pid=3939918
+
+
+Running: test_088
+tx0 starts
+tx0 ends
+tx1 starts
+  a
+  b
+  c
+tx1 ends
+        1       tx2
+        2       tx2a
+        4       tx2c
+
+Running: test_089
+
+Running: test_090
+
+Running: test_abort
+
+Running: test_array_at_checks_bounds
+
+Running: test_array_double_double_quoted_string
+
+Running: test_array_double_quoted_escaping
+
+Running: test_array_double_quoted_string
+
+Running: test_array_generate
+
+Running: test_array_generate_empty_strings
+
+Running: test_array_iterates_in_row_major_order
+
+Running: test_array_multiple_values
+
+Running: test_array_null_value
+
+Running: test_array_parses_multidim_arrays
+
+Running: test_array_parses_quoted_strings
+
+Running: test_array_parses_real_arrays
+
+Running: test_array_rejects_malformed_simple_int_arrays
+
+Running: test_array_rejects_malformed_simple_string_arrays
+
+Running: test_array_rejects_malformed_twodimensional_arrays
+
+Running: test_array_roundtrip
+
+Running: test_array_strings
+
+Running: test_array_unquoted_string
+
+Running: test_as_sql_array
+
+Running: test_bad_float
+
+Running: test_binary_esc_checks_buffer_length
+
+Running: test_binarystring
+
+Running: test_binarystring_array_stream
+
+Running: test_binarystring_conversion
+
+Running: test_binarystring_stream
+
+Running: test_blob_accepts_std_filesystem_path
+
+Running: test_blob_append_from_buf_appends
+
+Running: test_blob_append_to_buf_appends
+
+Running: test_blob_checks_open_mode
+
+Running: test_blob_close_leaves_blob_unusable
+
+Running: test_blob_create_makes_empty_blob
+
+Running: test_blob_create_with_oid_obeys_oid
+
+Running: test_blob_create_with_oid_requires_oid_be_free
+
+Running: test_blob_from_buf_interoperates_with_to_buf
+
+Running: test_blob_from_file_creates_blob_from_file_contents
+
+Running: test_blob_from_file_with_oid_writes_blob
+
+Running: test_blob_is_useless_by_default
+
+Running: test_blob_read_reads_data
+
+Running: test_blob_read_span
+
+Running: test_blob_reads_vector
+
+Running: test_blob_remove_is_not_idempotent
+
+Running: test_blob_remove_removes_blob
+
+Running: test_blob_resize_extends_to_desired_length
+
+Running: test_blob_resize_shortens_to_desired_length
+
+Running: test_blob_seek_sets_positions
+
+Running: test_blob_supports_move
+
+Running: test_blob_tell_tracks_position
+
+Running: test_blob_to_file_writes_file
+
+Running: test_blob_write_appends_at_insertion_point
+
+Running: test_blob_writes_span
+
+Running: test_blobs_are_transactional
+
+Running: test_bug_262
+
+Running: test_cancel_query
+
+Running: test_cannot_run_params_statement_during_focus
+
+Running: test_cannot_run_prepared_statement_during_focus
+
+Running: test_cannot_run_statement_during_focus
+
+Running: test_closed_connection
+
+Running: test_composite
+
+Running: test_composite_escapes
+
+Running: test_composite_handles_nulls
+
+Running: test_composite_renders_to_string
+
+Running: test_connection_params
+
+Running: test_connection_string
+
+Running: test_connection_string_constructor
+
+Running: test_container_stream_to
+
+Running: test_convert_null
+
+Running: test_convert_variant_to_string
+
+Running: test_cursor
+
+Running: test_empty_arrays
+
+Running: test_encodings
+
+Running: test_encrypt_password
+
+Running: test_error_verbosity
+
+Running: test_errorhandler
+
+Running: test_esc_accepts_various_types
+
+Running: test_esc_escapes_into_buffer
+
+Running: test_escaping
+
+Running: test_exceptions
+
+Running: test_field
+
+Running: test_float_range_contains
+
+Running: test_for_query_prepped
+
+Running: test_infinities
+
+Running: test_integer_conversion
+
+Running: test_long_float
+
+Running: test_move_assign
+
+Running: test_move_constructor
+
+Running: test_nested_array
+
+Running: test_nested_array_with_multiple_entries
+
+Running: test_nonblocking_connect
+
+Running: test_notification
+
+Running: test_parse_bad_range
+
+Running: test_parse_range
+
+Running: test_pipeline
+
+Running: test_placeholders_generates_names
+
+Running: test_prepared_statements
+
+Running: test_query_prepped
+
+Running: test_query_value_prepped
+
+Running: test_range_construct
+
+Running: test_range_contains
+
+Running: test_range_conversion
+
+Running: test_range_empty
+
+Running: test_range_equality
+
+Running: test_range_intersection
+
+Running: test_range_is_constexpr
+
+Running: test_range_subset
+
+Running: test_range_to_string
+
+Running: test_raw_connection
+
+Running: test_read_transaction
+
+Running: test_result_for_each
+
+Running: test_result_iter
+
+Running: test_result_iteration
+
+Running: test_result_iterator_assignment
+
+Running: test_result_iterator_swap
+
+Running: test_result_slicing
+
+Running: test_row
+
+Running: test_row_as
+
+Running: test_row_iterator
+
+Running: test_row_iterator_array_index_offsets_iterator
+
+Running: test_separated_list
+
+Running: test_simultaneous_transactions
+
+Running: test_skip_init_ssl
+
+Running: test_stateless_cursor
+
+Running: test_strconv_bool
+
+Running: test_strconv_class_enum
+
+Running: test_strconv_enum
+
+Running: test_strconv_optional
+
+Running: test_strconv_smart_pointer
+
+Running: test_stream_does_escaping
+
+Running: test_stream_from
+(Expected) Could not stream nulls into null-less fields: Attempt to convert SQL null to std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >.
+(Expected) Could not extract row: Streaming non-null value into null field.
+(Expected) Tuple is wrong size: Tried to extract 1 field(s) from a stream of 6.
+(Expected) Could not extract row: Tried to extract 7 field(s) from a stream of 6.
+testing `std::unique_ptr` as optional...
+testing `std::optional` as optional...
+
+Running: test_stream_from_does_escaping
+
+Running: test_stream_from_does_iteration
+
+Running: test_stream_from_parses_awkward_strings
+
+Running: test_stream_from_read_row
+
+Running: test_stream_handles_empty
+
+Running: test_stream_handles_empty_string
+
+Running: test_stream_handles_nulls_in_all_places
+
+Running: test_stream_iterates
+
+Running: test_stream_large_object
+
+Running: test_stream_parses_awkward_strings
+
+Running: test_stream_reads_nulls_as_optionals
+
+Running: test_stream_reads_simple_values
+
+Running: test_stream_reads_string_view
+
+Running: test_stream_to
+(Expected) Could not insert row: Failure during '[END COPY]': ERROR:  missing data for column ...
+(Expected) Fold - Could not insert row: Failure during '[END COPY]': ERROR:  missing data for column ...
+(Expected) Could not insert row: Failure during '[END COPY]': ERROR:  extra data after last ex...
+(Expected) Fold - Could not insert row: Failure during '[END COPY]': ERROR:  extra data after last ex...
+
+Running: test_stream_to_does_nonnull_optional
+
+Running: test_stream_to_empty_strings
+
+Running: test_stream_to_escaping
+
+Running: test_stream_to_factory_with_dynamic_columns
+
+Running: test_stream_to_factory_with_static_columns
+
+Running: test_stream_to_moves_into_optional
+
+Running: test_stream_to_optionals
+
+Running: test_stream_to_quotes_arguments
+
+Running: test_string_conversion
+
+Running: test_string_view_conversion
+
+Running: test_subtransaction
+
+Running: test_table_column
+
+Running: test_test_helpers
+
+Running: test_thread_safety_model
+
+Running: test_transaction
+
+Running: test_transaction_base
+
+Running: test_transaction_for_query
+
+Running: test_transaction_for_stream
+
+Running: test_transaction_query
+
+Running: test_transaction_query01
+
+Running: test_transaction_query1
+
+Running: test_transaction_query_n
+
+Running: test_transaction_query_params
+
+Running: test_transactor
+
+Running: test_type_name
+
+Running: test_wrong_number_of_params
+
+Running: test_zview_converts_to_string
+
+Running: test_zview_literal
+Ran 212 test(s).
+PASS: runner
+=============
+1 test passed
+=============
+make[2]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/test'
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/test'
+Making check in tools
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/tools'
+make[1]: Nothing to be done for 'check'.
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/tools'
+Making check in config
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/config'
+make[1]: Nothing to be done for 'check'.
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/config'
+Making check in doc
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir/doc'
+make[1]: Nothing to be done for 'check'.
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir/doc'
+make[1]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir'
+make  check-TESTS
+make[2]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir'
+make[3]: Entering directory '/home/zjr/libpqxx/libpqxx_build_dir'
+PASS: tools/lint
+============================================================================
+Testsuite summary for libpqxx 7.9.3
+============================================================================
+# TOTAL: 1
+# PASS:  1
+# SKIP:  0
+# XFAIL: 0
+# FAIL:  0
+# XPASS: 0
+# ERROR: 0
+============================================================================
+make[3]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir'
+make[2]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir'
+make[1]: Leaving directory '/home/zjr/libpqxx/libpqxx_build_dir'
