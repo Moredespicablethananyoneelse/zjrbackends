@@ -97,6 +97,8 @@ Successfully installed psycopg-3.2.3 psycopg-c-3.2.3 typing-extensions-4.12.2
 
 ###编写脚本程序，测试psycopg是否可以正常链接已经安装好的postgres数据库，测试脚本参见https://www.psycopg.org/psycopg3/docs/basic/usage.html
 ###将以上脚本保存在名为test-psycopg3.py的文件中，然后执行python test-psycopg3.py
+###注意执行python test-psycopg3.py需要激活上文中的虚拟环境,如下所示命令提示符中提示现在使用的虚拟环境是(gettingstarteddjango)
+###(getting_started_django) [zjr@VM-24-5-centos getting_started_django]$ python test-psycopg3.py
  
 ##安装链接池（缓存django和数据库之间创建的链接）
 
