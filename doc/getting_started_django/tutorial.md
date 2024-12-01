@@ -96,9 +96,218 @@ Successfully installed psycopg-3.2.3 psycopg-c-3.2.3 typing-extensions-4.12.2
 (getting_started_django) [zjr@VM-24-5-centos getting_started_django]$
 
 ###编写脚本程序，测试psycopg是否可以正常链接已经安装好的postgres数据库，测试脚本参见https://www.psycopg.org/psycopg3/docs/basic/usage.html
-###将以上脚本保存在名为test-psycopg3.py的文件中，然后执行python test-psycopg3.py
+###将以上脚本保存在名为test_psycopg3.py的文件中，然后执行python test_psycopg3.py
+###修改过的test_psycopg3.py的内容，参见同路径下的同名文件
 ###注意执行python test-psycopg3.py需要激活上文中的虚拟环境,如下所示命令提示符中提示现在使用的虚拟环境是(gettingstarteddjango)
-###(getting_started_django) [zjr@VM-24-5-centos getting_started_django]$ python test-psycopg3.py
- 
-##安装链接池（缓存django和数据库之间创建的链接）
+###(getting_started_django) [zjr@VM-24-5-centos getting_started_django]$ python test_psycopg3.py 
 
+
+##安装链接池（缓存django和数据库之间创建的链接）
+(getting_started_django) [zjr@VM-24-5-centos getting_started_django]$ pip install "psycopg[pool]"
+Requirement already satisfied: psycopg[pool] in ./.virtualenvs/getting_started_django/lib64/python3.12/site-packages (3.2.3)
+Requirement already satisfied: typing-extensions>=4.6 in ./.virtualenvs/getting_started_django/lib64/python3.12/site-packages (from psycopg[pool]) (4.12.2)
+Collecting psycopg-pool (from psycopg[pool])
+  Downloading psycopg_pool-3.2.4-py3-none-any.whl.metadata (2.6 kB)
+Downloading psycopg_pool-3.2.4-py3-none-any.whl (38 kB)
+Installing collected packages: psycopg-pool
+Successfully installed psycopg-pool-3.2.4
+(getting_started_django) [zjr@VM-24-5-centos getting_started_django]$
+
+
+
+#创建djangotutorial项目
+##项目所在路径及其中现有文件情况
+[O(getting_started_django) [zjr@VM-24-5-centos getting_started_django]$ ls
+README.md  tutorial.md
+(getting_started_django) [zjr@VM-24-5-centos getting_started_django]$ pwd
+/home/zjr/getting_started_django
+##创建djangotutorial项目路径
+(getting_started_django) [zjr@VM-24-5-centos getting_started_django]$ mkdir djangotutorial
+(getting_started_django) [zjr@VM-24-5-centos getting_started_django]$ ls
+djangotutorial  README.md  tutorial.md
+(getting_started_django) [zjr@VM-24-5-centos getting_started_django]$ ls djangotutorial/
+##在djangotutorial路径下生成django项目脚手架
+(getting_started_django) [zjr@VM-24-5-centos getting_started_django]$ django-admin startproject mysite djangotutorial
+(getting_started_django) [zjr@VM-24-5-centos getting_started_django]$ ls 
+djangotutorial  README.md  tutorial.md
+(getting_started_django) [zjr@VM-24-5-centos getting_started_django]$ ls djangotutorial/
+manage.py  mysite
+(getting_started_django) [zjr@VM-24-5-centos getting_started_django]$ 
+
+##安装tree命令
+[zjr@VM-24-5-centos ~]$ sudo dnf install tree
+[sudo] password for zjr: 
+Repository baseos is listed more than once in the configuration
+Repository baseos-source is listed more than once in the configuration
+Repository appstream is listed more than once in the configuration
+Repository appstream-source is listed more than once in the configuration
+Repository rt is listed more than once in the configuration
+Repository rt-source is listed more than once in the configuration
+Repository resilientstorage is listed more than once in the configuration
+Repository resilientstorage-source is listed more than once in the configuration
+Last metadata expiration check: 1:05:10 ago on Sun 01 Dec 2024 08:44:41 AM CST.
+Dependencies resolved.
+======================================================================================================================================================================
+ Package                             Architecture                          Version                                        Repository                             Size
+======================================================================================================================================================================
+Installing:
+ tree                                x86_64                                1.8.0-10.el9                                   baseos                                 56 k
+
+Transaction Summary
+======================================================================================================================================================================
+Install  1 Package
+
+Total download size: 56 k
+Installed size: 113 k
+Is this ok [y/N]: y
+Downloading Packages:
+tree-1.8.0-10.el9.x86_64.rpm                                                                                                          309 kB/s |  56 kB     00:00    
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                                 305 kB/s |  56 kB     00:00     
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                                                                                                              1/1 
+  Installing       : tree-1.8.0-10.el9.x86_64                                                                                                                     1/1 
+  Running scriptlet: tree-1.8.0-10.el9.x86_64                                                                                                                     1/1 
+  Verifying        : tree-1.8.0-10.el9.x86_64                                                                                                                     1/1 
+
+Installed:
+  tree-1.8.0-10.el9.x86_64                                                                                                                                            
+
+Complete!
+[zjr@VM-24-5-centos ~]$ 
+
+## 显示djangotutorial当前目录树结构
+(getting_started_django) [zjr@VM-24-5-centos getting_started_django]$ tree djangotutorial/
+djangotutorial/
+├── manage.py
+└── mysite
+    ├── asgi.py
+    ├── __init__.py
+    ├── settings.py
+    ├── urls.py
+    └── wsgi.py
+
+1 directory, 6 files
+##检查脚手架是否可以正常使用
+(getting_started_django) [zjr@VM-24-5-centos djangotutorial]$ python manage.py runserver
+Watching for file changes with StatReloader
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 18 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, auth, contenttypes, sessions.
+Run 'python manage.py migrate' to apply them.
+December 01, 2024 - 02:03:57
+Django version 5.1.2, using settings 'mysite.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CONTROL-C.
+
+[01/Dec/2024 02:04:05] "GET / HTTP/1.1" 200 12068
+Not Found: /favicon.ico
+[01/Dec/2024 02:04:06] "GET /favicon.ico HTTP/1.1" 404 2208
+
+##创建好django 项目后，开始创建django app
+###切换路径
+(getting_started_django) [zjr@VM-24-5-centos getting_started_django]$ cd djangotutorial/
+(getting_started_django) [zjr@VM-24-5-centos djangotutorial]$ ls
+db.sqlite3  manage.py  mysite
+###在manage.py所在的路径中创建polls 问卷调查app
+(getting_started_django) [zjr@VM-24-5-centos djangotutorial]$  python manage.py startapp polls
+(getting_started_django) [zjr@VM-24-5-centos djangotutorial]$ tree .
+.
+├── db.sqlite3
+├── manage.py
+├── mysite
+│   ├── asgi.py
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   ├── __init__.cpython-312.pyc
+│   │   ├── settings.cpython-312.pyc
+│   │   ├── urls.cpython-312.pyc
+│   │   └── wsgi.cpython-312.pyc
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+└── polls
+    ├── admin.py
+    ├── apps.py
+    ├── __init__.py
+    ├── migrations
+    │   └── __init__.py
+    ├── models.py
+    ├── tests.py
+    └── views.py
+
+4 directories, 18 files
+(getting_started_django) [zjr@VM-24-5-centos djangotutorial]$
+
+
+
+##查看polls  app的结构
+[zjr@VM-24-5-centos djangotutorial]$ tree polls
+polls
+├── admin.py
+├── apps.py
+├── __init__.py
+├── migrations
+│   └── __init__.py
+├── models.py
+├── tests.py
+└── views.py
+
+1 directory, 7 files
+[zjr@VM-24-5-centos djangotutorial]$ 
+
+## 为polls编写简单的views
+polls/views.py
+
+from django.http import HttpResponse
+def index(request):
+    return HttpResponse("Hello, world. You're at the polls index.")
+
+## 在polls路径下创建urls.py文件polls/urls.py，并在其中编写如下代码
+### 注意创建的polls文件下，默认是没有urls.py文件的
+from django.urls import path
+from . import views
+urlpatterns = [
+    path("", views.index, name="index"),
+]
+## polls文件夹下的路径结构为
+polls/
+    __init__.py
+    admin.py
+    apps.py
+    migrations/
+        __init__.py
+    models.py
+    tests.py
+    urls.py
+    views.py
+
+## 配置整个django项目路径mysite下的urls.py，即： mysite/urls.py
+
+from django.contrib import admin
+from django.urls import include, path
+urlpatterns = [
+    path("polls/", include("polls.urls")),
+    path("admin/", admin.site.urls),
+]
+
+## 启动django的开发服务器
+python manage.py runserver
+
+## 访问 http://localhost:8000/polls/
+###注意访问http://localhost:8000会报错
+Using the URLconf defined in mysite.urls, Django tried these URL patterns, in this order:
+polls/
+admin/
+The empty path didn’t match any of these.
+
+看不到第一次执行python manage.py runserver了。
+The install worked successfully! Congratulations!
+View release notes for Django 5.1
+You are seeing this page because DEBUG=True is in your settings file and you have not configured any URLs.
