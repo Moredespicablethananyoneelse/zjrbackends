@@ -311,3 +311,5 @@ The empty path didn’t match any of these.
 The install worked successfully! Congratulations!
 View release notes for Django 5.1
 You are seeing this page because DEBUG=True is in your settings file and you have not configured any URLs.
+
+###需要注意的是，此时，我们并没有将polls这个app放进mysite的INSTALL_APP里，只是将修改了polls/views.py, polls/urls.py和mysite/urls.py三个文件，就可以通过浏览器访问polls/views.py这个视图了
