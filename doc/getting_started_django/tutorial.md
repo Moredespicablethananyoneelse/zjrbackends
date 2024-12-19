@@ -488,3 +488,22 @@ def results(request, question_id):
 def vote(request, question_id):
     return HttpResponse("You're voting on question %s." % question_id)
 ```
+
+
+### 在polls中的urls文件即polls/urls.py中添加如下内容。而mysite/urls.py先前已经include了polls.urls,所以这次不用改
+```
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+    # ex: /polls/
+    path("", views.index, name="index"),
+    # ex: /polls/5/
+    path("<int:question_id>/", views.detail, name="detail"),
+    # ex: /polls/5/results/
+    path("<int:question_id>/results/", views.results, name="results"),
+    # ex: /polls/5/vote/
+    path("<int:question_id>/vote/", views.vote, name="vote"),
+]
+```
