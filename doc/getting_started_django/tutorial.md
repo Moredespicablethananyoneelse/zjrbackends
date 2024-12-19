@@ -610,6 +610,11 @@ urlpatterns = [
 ##这样就name="detail"的url地址添加了命名空间polls，这样就能区分开mysite这个项目的其他app中也叫detail链接
 ## 而path中detail这个链接名称可以用在模板系统中，用来去除硬编码的url链接
 ## 比如polls/tempaltes/polls/index.html可以使用如下方式引用detail这个view的url
+
+```
+      <li><a href="/polls/{{question.id}}/">{{ question.question_text }}</a></li>
+```
+ ## 可以修改成下面的方式
 ```
 <li><a href="{% url 'polls:detail' question.id %}">{{ question.question_text }}</a></li>
 ```
