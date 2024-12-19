@@ -591,3 +591,25 @@ def detail(request, question_id):
 {% endfor %}
 </ul>
 ```
+
+## 删除模板中的url硬编码
+# 修改polls/urls.py，添加app_name属性
+```
+from django.urls import path
+
+from . import views
+
+app_name = "polls"
+urlpatterns = [
+    path("", views.index, name="index"),
+    path("<int:question_id>/", views.detail, name="detail"),
+    path("<int:question_id>/results/", views.results, name="results"),
+    path("<int:question_id>/vote/", views.vote, name="vote"),
+]
+```
+##这样就name="detail"的url地址添加了命名空间polls，这样就能区分开mysite这个项目的其他app中也叫detail链接
+## 而path中detail这个链接名称可以用在模板系统中，用来去除硬编码的url链接
+## 比如polls/tempaltes/polls/index.html可以使用如下方式引用detail这个view的url
+```
+<li><a href="{% url 'polls:detail' question.id %}">{{ question.question_text }}</a></li>
+```
