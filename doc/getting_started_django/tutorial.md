@@ -507,3 +507,87 @@ urlpatterns = [
     path("<int:question_id>/vote/", views.vote, name="vote"),
 ]
 ```
+## 此时可以访问http://127.0.0.1:8000/polls/5/vote, http://127.0.0.1:8000/polls/5/results, http://127.0.0.1:8000/polls/5/,http://127.0.0.1:8000/polls/
+## 依次调用的时vote， results， detail,index 这几个view。
+
+###view 做两件事，返回HttpRessponse和 Http404，剩下的其他做什么都行,比如读取数据库数据，调用django的模板系统，生成pdf文件，xml文件，调用任何python 库等等。
+## django只要修返回HttpResponse护着Http404
+
+## 修改index 这个view干点实际的事情,比如查询数据库，然后显示poll的前5条
+```
+ from django.http import HttpResponse
+
+from .models import Question
+
+
+def index(request):
+    latest_question_list = Question.objects.order_by("-pub_date")[:5]
+    output = ", ".join([q.question_text for q in latest_question_list])
+    return HttpResponse(output)
+
+
+# Leave the rest of the views (detail, results, vote) unchanged
+```
+#
+## 在view中使用django的模板系统
+### 在默认的配置文件中DjangoTemplates 配置的 APP_DIRS 被设置成了 True，
+##所以DjangoTemplates会在INSTALLED_APPS指定的各个app路径下找templates子路径
+## 为index生成的模板应该放在polls/templates/polls/index.html里
+## 这是因为app_directories template loader加载模板的机制决定的
+###你可以在django项目中使用 polls/index.html，引用这个模板,在view里引用，如下文的index这个view
+## 在文件polls/templates/polls/index.html编写如下内容
+```
+{% if latest_question_list %}
+    <ul>
+    {% for question in latest_question_list %}
+        <li><a href="/polls/{{ question.id }}/">{{ question.question_text }}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No polls are available.</p>
+{% endif %}
+```
+
+## 我们在index视图中使用上面的模板
+### 我们更新下polls/views.py中的index这个view
+```
+from django.http import HttpResponse
+from django.template import loader
+
+from .models import Question
+
+
+def index(request):
+    latest_question_list = Question.objects.order_by("-pub_date")[:5]
+    template = loader.get_template("polls/index.html")
+    context = {
+        "latest_question_list": latest_question_list,
+    }
+    return HttpResponse(template.render(context, request))
+```
+###上面index使用template的方式有简写方法，但是我们本地不用深究。如有需要参考django的官网的Writing your first Django App, part3
+## 我们再尝试下在view中抛出异常。
+## 修改polls/views.py的detail这个view
+```
+from django.http import Http404
+from django.shortcuts import render
+
+from .models import Question
+# ...
+def detail(request, question_id):
+    try:
+        question = Question.objects.get(pk=question_id)
+    except Question.DoesNotExist:
+        raise Http404("Question does not exist")
+    return render(request, "polls/detail.html", {"question": question})
+```
+## 上面这个view也有简写模式，这里不继续讨论
+## 创建polls/tempaltes/polls/detail.html编写如下模板文件
+```
+<h1>{{ question.question_text }}</h1>
+<ul>
+{% for choice in question.choice_set.all %}
+    <li>{{ choice.choice_text }}</li>
+{% endfor %}
+</ul>
+```
