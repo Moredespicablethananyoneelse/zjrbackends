@@ -470,3 +470,20 @@ admin.site.register(Question)
 
 ## 再次访问http://127.0.0.1:8000/admin/
 现在可以看到poll的Question已经被admin接管了
+
+
+## Writing your first Django app, part 3
+### 在 polls/views.py中增加以下几个view。在此前已经自Writing your first Django app, part2 已经添加index这个view，所以这次不用
+```
+def detail(request, question_id):
+    return HttpResponse("You're looking at question %s." % question_id)
+
+
+def results(request, question_id):
+    response = "You're looking at the results of question %s."
+    return HttpResponse(response % question_id)
+
+
+def vote(request, question_id):
+    return HttpResponse("You're voting on question %s." % question_id)
+```
