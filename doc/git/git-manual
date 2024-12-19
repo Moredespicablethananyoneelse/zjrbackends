@@ -1,8 +1,12 @@
 0：首先在github网站的Moredespicablethananyoneelse账户下创建repository  zjrbackends仓库
 
-1：在本地机器上配置git的相关配置参数
+1:在本地机器上配置git的相关配置参数
+   "参考文档：https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/developer_guide/setting-up_setup-managing-versions#setting-up_setup-managing-versions"
+   "https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/developing_c_and_cpp_applications_in_rhel_9/setting-up-a-development-workstation_developing-applications#setting-up-a-development-workstation_developing-applications"
+
+
    git config --global user.name "Moredespicablethananyoneelse"
-   git config --global user.emal "donotblieveit@outlook.com"
+   git config --global user.email "donotblieveit@outlook.com"
 2：下载zjrbackends仓库代码
    git clone  https://github.com/Moredespicablethananyoneelse/zjrbackends.git
  
@@ -87,4 +91,25 @@ branch 'main' set up to track 'origin/main'.
 
 
 
+## 如果将已存在的本地代码库上传到github，也是首先在github网页上创建新项目，创建完新项目后，会提示使用下面命令，将本地项目和github上的项目关联：
 
+
+…or create a new repository on the command line
+echo "# get_started_django_zjr" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git branch -M main
+git remote add origin git@github.com:Moredespicablethananyoneelse/get_started_django_zjr.git
+git push -u origin main
+
+…or push an existing repository from the command line
+git remote add origin git@github.com:Moredespicablethananyoneelse/get_started_django_zjr.git
+git branch -M main
+git push -u origin main
+
+## 但是有时候执行git push -u origin main命令总是提示需要输入用户名和密码，出现以上问题的原因时以https的方式提交代码。
+## 如果采用ssh的方式就可以免密码提交了，这是需要删除已经建立的https链接方式，改用ssh方式
+## git remote rm origin
+   git remote add origin git@github.com:Moredespicablethananyoneelse/get_started_django_zjr.git
+## 即可
