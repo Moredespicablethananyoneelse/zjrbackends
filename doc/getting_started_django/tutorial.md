@@ -473,7 +473,8 @@ admin.site.register(Question)
 
 
 ## Writing your first Django app, part 3
-### 在 polls/views.py中增加以下几个view。在此前已经自Writing your first Django app, part2 已经添加index这个view，所以这次不用
+### 在 polls/views.py中增加以下几个view。在此前已经自Writing your first Django app, part1 已经添加index这个view，所以这次不用,
+### 而且在Writing your first Django app,part1中在mysite的全局urls.py中include了polls/urls
 ```
 def detail(request, question_id):
     return HttpResponse("You're looking at question %s." % question_id)
